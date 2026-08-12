@@ -11,7 +11,7 @@ enum SessionControllerError: Error, Equatable {
 
 @MainActor
 @Observable
-final class SessionController: SessionControlling {
+final class SessionController {
     private(set) var engine = TimerEngine()
     private(set) var spaces: [Space] = []
     private(set) var selectedSpaceID: UUID?

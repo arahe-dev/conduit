@@ -31,10 +31,12 @@ targets:
     sources:
       - path: ProductivityTracker
       - path: ProductivityTrackerLiveActivity/ActivityAttributes
+      - path: ProductivityTrackerLiveActivity/Intents
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker
         PRODUCT_NAME: ProductivityTracker
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) APP_TARGET"
         INFOPLIST_FILE: ProductivityTracker/Resources/Info.plist
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: ProductivityTracker
@@ -59,7 +61,6 @@ targets:
     platform: iOS
     sources:
       - path: ProductivityTrackerLiveActivity
-      - path: ProductivityTracker/App/AppRuntime.swift
       - path: ProductivityTracker/Timer/ElapsedFormatter.swift
     settings:
       base:
