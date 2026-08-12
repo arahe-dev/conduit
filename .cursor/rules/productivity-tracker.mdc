@@ -1,0 +1,22 @@
+---
+description: ProductivityTracker is a native SwiftUI iOS timer app built from Windows via Cursor Cloud and GitHub Actions.
+alwaysApply: true
+---
+
+# ProductivityTracker project rules
+
+This repository is a native SwiftUI iOS app named ProductivityTracker.
+
+- Primary authoring host is Windows.
+- Cursor Cloud Agent runs on Linux.
+- Never assume local Xcode, Simulator, or `xcodebuild` on the Linux agent.
+- GitHub Actions `macos-26` is the authoritative build, test, screenshot, and unsigned IPA environment.
+- After compilation-affecting changes, push and inspect GitHub Actions. Fix CI yourself.
+- Keep XcodeGen `project.yml` as the project source of truth. Do not hand-edit `project.pbxproj` as the normal workflow. Pin XcodeGen via `.xcodegen-version`.
+- Do not introduce React Native, Expo, Flutter, Capacitor, web-view shells, Firebase, CloudKit, backends, accounts, analytics, or paid services.
+- Use public Apple APIs only. No private frameworks.
+- Preserve native Apple visual language: system San Francisco, tabular stopwatch digits, iOS 26 Liquid Glass (`glassEffect` / `GlassEffectContainer`), semantic Start/Stop colors.
+- The timer is the primary product. Do not turn the main screen into a dashboard.
+- Only the upper stopwatch region handles horizontal Space paging. The lower task panel must stay stationary.
+- Core app must remain compatible with the free personal-signing / Sideloadly installation path.
+- No Apple credentials, signing certificates, provisioning profiles, or secrets in source or CI.

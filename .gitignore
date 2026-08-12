@@ -1,0 +1,48 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xcresult
+
+# Generated project (CI regenerates from project.yml)
+*.xcodeproj/
+*.xcworkspace/
+!project.yml
+
+# Swift PM
+.swiftpm/
+.build/
+Package.resolved
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Secrets / signing
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+AuthKey_*.p8
+*.keychain
+*.keychain-db
+
+# Python
+__pycache__/
+*.pyc
+
+# Local helper output
+artifacts/
+dist/
+.idea/
+.vscode/
