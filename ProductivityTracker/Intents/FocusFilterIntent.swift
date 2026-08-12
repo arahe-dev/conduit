@@ -1,10 +1,12 @@
 import AppIntents
 
 struct ProductivityFocusFilter: SetFocusFilterIntent {
-    static var title: LocalizedStringResource = "Select a Space"
-    static var description: IntentDescription? = IntentDescription(
-        "When this Focus is active, ProductivityTracker can select the matching Space. The app cannot turn Focus on by itself."
-    )
+    static var title: LocalizedStringResource { "Select a Space" }
+    static var description: IntentDescription? {
+        IntentDescription(
+            "When this Focus is active, ProductivityTracker can select the matching Space. The app cannot turn Focus on by itself."
+        )
+    }
 
     @Parameter(title: "Space")
     var space: SpaceEntity?

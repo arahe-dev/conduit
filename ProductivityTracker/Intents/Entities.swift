@@ -2,8 +2,8 @@ import AppIntents
 import SwiftData
 
 struct SpaceEntity: AppEntity, Identifiable {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Space"
-    static var defaultQuery = SpaceEntityQuery()
+    static var typeDisplayRepresentation: TypeDisplayRepresentation { "Space" }
+    static var defaultQuery: SpaceEntityQuery { SpaceEntityQuery() }
 
     var id: UUID
     var name: String
@@ -33,8 +33,8 @@ struct SpaceEntityQuery: EntityQuery {
 }
 
 struct TaskEntity: AppEntity, Identifiable {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Task"
-    static var defaultQuery = TaskEntityQuery()
+    static var typeDisplayRepresentation: TypeDisplayRepresentation { "Task" }
+    static var defaultQuery: TaskEntityQuery { TaskEntityQuery() }
 
     var id: UUID
     var name: String

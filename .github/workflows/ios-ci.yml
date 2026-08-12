@@ -61,8 +61,9 @@ jobs:
           xcodebuild \
             -project ProductivityTracker.xcodeproj \
             -scheme ProductivityTracker \
-            -destination "id=${SIM_UDID}" \
+            -destination "platform=iOS Simulator,id=${SIM_UDID},arch=arm64" \
             -configuration Debug \
+            ONLY_ACTIVE_ARCH=YES \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -75,9 +76,10 @@ jobs:
           xcodebuild \
             -project ProductivityTracker.xcodeproj \
             -scheme ProductivityTracker \
-            -destination "id=${SIM_UDID}" \
+            -destination "platform=iOS Simulator,id=${SIM_UDID},arch=arm64" \
             -configuration Debug \
             -resultBundlePath "$ARTIFACT_DIR/TestResults.xcresult" \
+            ONLY_ACTIVE_ARCH=YES \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \

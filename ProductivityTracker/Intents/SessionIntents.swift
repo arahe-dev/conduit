@@ -1,8 +1,8 @@
 import AppIntents
 
 struct SelectSpaceIntent: AppIntent {
-    static var title: LocalizedStringResource = "Select Space"
-    static var description = IntentDescription("Select a ProductivityTracker Space without starting the timer.")
+    static var title: LocalizedStringResource { "Select Space" }
+    static var description: IntentDescription? { IntentDescription("Select a ProductivityTracker Space without starting the timer.") }
 
     @Parameter(title: "Space")
     var space: SpaceEntity
@@ -23,8 +23,8 @@ struct SelectSpaceIntent: AppIntent {
 }
 
 struct StartSpaceIntent: AppIntent {
-    static var title: LocalizedStringResource = "Start Space"
-    static var description = IntentDescription("Select a Space and start its timer.")
+    static var title: LocalizedStringResource { "Start Space" }
+    static var description: IntentDescription? { IntentDescription("Select a Space and start its timer.") }
 
     @Parameter(title: "Space")
     var space: SpaceEntity
@@ -46,8 +46,8 @@ struct StartSpaceIntent: AppIntent {
 }
 
 struct StartCurrentSpaceIntent: AppIntent {
-    static var title: LocalizedStringResource = "Start Session"
-    static var description = IntentDescription("Start the timer for the current or default Space.")
+    static var title: LocalizedStringResource { "Start Session" }
+    static var description: IntentDescription? { IntentDescription("Start the timer for the current or default Space.") }
 
     func perform() async throws -> some IntentResult {
         try await MainActor.run {
@@ -61,7 +61,7 @@ struct StartCurrentSpaceIntent: AppIntent {
 }
 
 struct StopSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Stop Session"
+    static var title: LocalizedStringResource { "Stop Session" }
 
     func perform() async throws -> some IntentResult {
         try await MainActor.run {
@@ -72,7 +72,7 @@ struct StopSessionIntent: AppIntent {
 }
 
 struct PauseSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Pause Session"
+    static var title: LocalizedStringResource { "Pause Session" }
 
     func perform() async throws -> some IntentResult {
         try await MainActor.run {
@@ -83,7 +83,7 @@ struct PauseSessionIntent: AppIntent {
 }
 
 struct ResumeSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Resume Session"
+    static var title: LocalizedStringResource { "Resume Session" }
 
     func perform() async throws -> some IntentResult {
         try await MainActor.run {
@@ -94,8 +94,8 @@ struct ResumeSessionIntent: AppIntent {
 }
 
 struct LapIntent: AppIntent {
-    static var title: LocalizedStringResource = "Next Task"
-    static var description = IntentDescription("Finish the current task interval and start the next enabled task.")
+    static var title: LocalizedStringResource { "Next Task" }
+    static var description: IntentDescription? { IntentDescription("Finish the current task interval and start the next enabled task.") }
 
     func perform() async throws -> some IntentResult {
         try await MainActor.run {

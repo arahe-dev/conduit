@@ -2,7 +2,7 @@ import AppIntents
 import SwiftData
 
 struct SelectTaskIntent: AppIntent {
-    static var title: LocalizedStringResource = "Select Task"
+    static var title: LocalizedStringResource { "Select Task" }
 
     @Parameter(title: "Task")
     var task: TaskEntity
@@ -22,7 +22,7 @@ struct SelectTaskIntent: AppIntent {
 }
 
 struct GetCurrentSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Get Current Session"
+    static var title: LocalizedStringResource { "Get Current Session" }
 
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
         let summary = await MainActor.run { () -> String in
@@ -39,7 +39,7 @@ struct GetCurrentSessionIntent: AppIntent {
 }
 
 struct CreateSpaceIntent: AppIntent {
-    static var title: LocalizedStringResource = "Create Space"
+    static var title: LocalizedStringResource { "Create Space" }
 
     @Parameter(title: "Name")
     var name: String
@@ -59,8 +59,8 @@ struct CreateSpaceIntent: AppIntent {
 }
 
 struct ImportSpaceDefinitionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Import Space Definition"
-    static var description = IntentDescription("Create a Space from a JSON object with name, color, and tasks.")
+    static var title: LocalizedStringResource { "Import Space Definition" }
+    static var description: IntentDescription? { IntentDescription("Create a Space from a JSON object with name, color, and tasks.") }
 
     @Parameter(title: "JSON")
     var json: String
@@ -83,7 +83,7 @@ struct ImportSpaceDefinitionIntent: AppIntent {
 }
 
 struct DistractionStartedIntent: AppIntent {
-    static var title: LocalizedStringResource = "Distraction Started"
+    static var title: LocalizedStringResource { "Distraction Started" }
 
     func perform() async throws -> some IntentResult {
         await MainActor.run {
@@ -94,7 +94,7 @@ struct DistractionStartedIntent: AppIntent {
 }
 
 struct DistractionEndedIntent: AppIntent {
-    static var title: LocalizedStringResource = "Distraction Ended"
+    static var title: LocalizedStringResource { "Distraction Ended" }
 
     func perform() async throws -> some IntentResult {
         await MainActor.run {

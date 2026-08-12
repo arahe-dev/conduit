@@ -1,8 +1,8 @@
 import AppIntents
 
 struct StopFromLiveActivityIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Stop Session"
-    static var openAppWhenRun: Bool = true
+    static var title: LocalizedStringResource { "Stop Session" }
+    static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
         await MainActor.run {
@@ -13,8 +13,8 @@ struct StopFromLiveActivityIntent: LiveActivityIntent {
 }
 
 struct LapFromLiveActivityIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Next Task"
-    static var openAppWhenRun: Bool = true
+    static var title: LocalizedStringResource { "Next Task" }
+    static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
         await MainActor.run {
@@ -25,8 +25,8 @@ struct LapFromLiveActivityIntent: LiveActivityIntent {
 }
 
 struct PauseFromLiveActivityIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Pause Session"
-    static var openAppWhenRun: Bool = true
+    static var title: LocalizedStringResource { "Pause Session" }
+    static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
         await MainActor.run {
@@ -37,8 +37,8 @@ struct PauseFromLiveActivityIntent: LiveActivityIntent {
 }
 
 struct ResumeFromLiveActivityIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Resume Session"
-    static var openAppWhenRun: Bool = true
+    static var title: LocalizedStringResource { "Resume Session" }
+    static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
         await MainActor.run {
