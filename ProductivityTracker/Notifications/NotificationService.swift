@@ -12,6 +12,7 @@ struct NotificationIdentifiers {
     }
 }
 
+@MainActor
 protocol NotificationScheduling: AnyObject {
     func requestAuthorizationIfNeeded() async
     func scheduleDistractionReminder(sessionID: UUID, spaceName: String, elapsed: TimeInterval, after seconds: TimeInterval)
@@ -19,6 +20,7 @@ protocol NotificationScheduling: AnyObject {
     func cancelAllDistractionReminders()
 }
 
+@MainActor
 final class NotificationService: NSObject, NotificationScheduling, UNUserNotificationCenterDelegate {
     private let center: UNUserNotificationCenter
     var onContinue: (@MainActor () -> Void)?
@@ -105,6 +107,7 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
     }
 }
 
+@MainActor
 final class RecordingNotificationService: NotificationScheduling {
     struct Request: Equatable {
         var sessionID: UUID
