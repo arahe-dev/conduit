@@ -1,6 +1,7 @@
 import Foundation
 import ActivityKit
 
+@MainActor
 protocol LiveActivityManaging: AnyObject {
     func startOrUpdate(from controller: SessionController, at now: Date)
     func end(at now: Date, elapsed: TimeInterval)
@@ -57,6 +58,7 @@ final class LiveActivityManager: LiveActivityManaging {
     }
 }
 
+@MainActor
 final class NullLiveActivityManager: LiveActivityManaging {
     var started = 0
     var ended = 0

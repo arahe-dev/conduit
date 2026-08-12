@@ -78,7 +78,11 @@ final class SessionController: SessionControlling {
         spaces = try context.fetch(descriptor)
     }
 
-    func selectSpace(_ id: UUID, haptic: Bool = false) {
+    func selectSpace(_ id: UUID) {
+        selectSpace(id, haptic: false)
+    }
+
+    func selectSpace(_ id: UUID, haptic: Bool) {
         selectedSpaceID = id
         settings.selectedSpaceID = id
         if haptic {
