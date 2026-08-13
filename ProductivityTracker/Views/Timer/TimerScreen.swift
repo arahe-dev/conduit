@@ -75,7 +75,7 @@ struct TimerScreen: View {
                 StopwatchCard(
                     controller: controller,
                     space: space,
-                    showsControls: true,
+                    showsControls: space.id == controller.selectedSpaceID,
                     onLongPressLap: { showTaskPicker = true }
                 )
                 .tag(space.id as UUID)
