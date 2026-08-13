@@ -38,32 +38,37 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertEqual(space.label, afterUpper)
     }
 
+    private func control(_ identifier: String) -> XCUIElement {
+        app.descendants(matching: .any)[identifier].firstMatch
+    }
+
     func testStartStopResetLabels() {
-        let startStop = app.buttons["start-stop-button"]
+        let startStop = control("start-stop-button")
+        XCTAssertTrue(startStop.waitForExistence(timeout: 5))
         XCTAssertEqual(startStop.label, "Start")
         startStop.tap()
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "running")
         XCTAssertEqual(startStop.label, "Stop")
-        XCTAssertTrue(app.buttons["lap-button"].isEnabled)
+        XCTAssertTrue(control("lap-button").isEnabled)
         startStop.tap()
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "stopped")
         XCTAssertEqual(startStop.label, "Start")
-        XCTAssertTrue(app.buttons["reset-button"].waitForExistence(timeout: 2))
-        XCTAssertEqual(app.buttons["reset-button"].label, "Reset")
+        XCTAssertTrue(control("reset-button").waitForExistence(timeout: 2))
+        XCTAssertEqual(control("reset-button").label, "Reset")
     }
 
     func testStartElapsedLapStop() {
-        app.buttons["start-stop-button"].tap()
+        control("start-stop-button").tap()
         XCTAssertTrue(app.staticTexts["stopwatch-display"].waitForExistence(timeout: 2))
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "running")
-        app.buttons["lap-button"].tap()
+        control("lap-button").tap()
         XCTAssertTrue(app.descendants(matching: .any)["task-row-Research"].firstMatch.exists)
-        app.buttons["start-stop-button"].tap()
+        control("start-stop-button").tap()
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "stopped")
     }
 
     func testTaskTapSelectsTask() {
-        app.buttons["start-stop-button"].tap()
+        control("start-stop-button").tap()
         let email = app.descendants(matching: .any)["task-row-Email"].firstMatch
         XCTAssertTrue(email.waitForExistence(timeout: 2))
         email.tap()
@@ -71,10 +76,10 @@ final class ProductivityTrackerUITests: XCTestCase {
     }
 
     func testLongPressLapPresentsTaskPickerWithoutLapping() {
-        app.buttons["start-stop-button"].tap()
+        control("start-stop-button").tap()
         let deep = app.descendants(matching: .any)["task-row-Deep Work"].firstMatch
         XCTAssertTrue(deep.waitForExistence(timeout: 2))
-        app.buttons["lap-button"].press(forDuration: 0.85)
+        control("lap-button").press(forDuration: 0.85)
         let picker = app.otherElements["task-picker"].firstMatch
         let emailChoice = app.buttons["task-choice-Email"].firstMatch
         XCTAssertTrue(picker.waitForExistence(timeout: 3) || emailChoice.waitForExistence(timeout: 3))
@@ -140,12 +145,12 @@ final class ScreenshotUITests: XCTestCase {
         capture(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "running"], environment: ["UITEST_ELAPSED": "31.42"], name: "02-timer-running", directory: screenshotDir)
 
         let running = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "running"], environment: ["UITEST_ELAPSED": "31.42"])
-        running.buttons["start-stop-button"].tap()
+        running.descendants(matching: .any)["start-stop-button"].firstMatch.tap()
         save(running.screenshot(), name: "03-timer-stopped", directory: screenshotDir)
         running.terminate()
 
         let pickerApp = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "running"], environment: ["UITEST_ELAPSED": "31.42"])
-        pickerApp.buttons["lap-button"].press(forDuration: 0.8)
+        pickerApp.descendants(matching: .any)["lap-button"].firstMatch.press(forDuration: 0.8)
         sleep(1)
         save(XCUIScreen.main.screenshot(), name: "04-task-picker", directory: screenshotDir)
         pickerApp.terminate()

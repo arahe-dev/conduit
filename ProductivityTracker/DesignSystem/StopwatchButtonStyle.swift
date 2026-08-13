@@ -36,6 +36,7 @@ struct StopwatchCircleButton: View {
     var kind: Kind
     var action: () -> Void
     var isEnabled: Bool = true
+    var identifier: String? = nil
     var diameter: CGFloat = LayoutMetrics.buttonDiameter
 
     var body: some View {
@@ -47,8 +48,9 @@ struct StopwatchCircleButton: View {
                 .background(Circle().fill(kind.fill.opacity(isEnabled ? 1 : 0.55)))
         }
         .buttonStyle(.plain)
-        .disabled(!isEnabled)
         .accessibilityLabel(kind.title)
+        .accessibilityIdentifier(identifier ?? kind.title.lowercased())
+        .disabled(!isEnabled)
         .frame(minWidth: 44, minHeight: 44)
     }
 }
