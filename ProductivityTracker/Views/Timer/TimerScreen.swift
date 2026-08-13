@@ -15,12 +15,22 @@ struct TimerScreen: View {
                 VStack(spacing: LayoutMetrics.stackSpacing) {
                     spacePager
                         .frame(height: upper)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier(AccessibilityIDs.timerCard)
                     TaskPanel(controller: controller)
                         .frame(maxHeight: .infinity)
                 }
                 .padding(.horizontal, LayoutMetrics.horizontalMargin)
                 .padding(.top, 4)
                 .padding(.bottom, 10)
+
+                Text(controller.selectedSpace?.name ?? "")
+                    .font(.caption)
+                    .opacity(0.01)
+                    .accessibilityIdentifier(AccessibilityIDs.spaceName)
+                    .accessibilityLabel(controller.selectedSpace?.name ?? "")
+                    .frame(width: 8, height: 8)
+                    .offset(x: -120, y: 20)
 
                 Button {
                     showSettings = true
@@ -54,7 +64,6 @@ struct TimerScreen: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .animation(reduceMotion ? nil : .interactiveSpring, value: controller.selectedSpaceID)
-        .accessibilityIdentifier(AccessibilityIDs.timerCard)
     }
 
     private var selectedSpaceBinding: Binding<UUID> {

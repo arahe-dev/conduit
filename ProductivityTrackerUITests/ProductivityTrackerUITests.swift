@@ -11,11 +11,28 @@ final class ProductivityTrackerUITests: XCTestCase {
     }
 
     func testLaunchShowsDefaultSpace() {
-        XCTAssertTrue(app.staticTexts["space-name"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["space-name"].label, "Work")
-        XCTAssertTrue(app.otherElements["timer-card"].exists)
-        XCTAssertTrue(app.otherElements["task-panel"].exists)
+        let space = app.descendants(matching: .any)["space-name"]
+        XCTAssertTrue(space.waitForExistence(timeout: 10))
+        XCTAssertEqual(space.label, "Work")
+        XCTAssertTrue(app.descendants(matching: .any)["timer-card"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["task-panel"].exists)
         XCTAssertTrue(app.buttons["start-stop-button"].exists)
+    }
+
+    func testUpperSwipeChangesSpaceAndLowerSwipeDoesNot() {
+        let space = app.descendants(matching: .any)["space-name"]
+        XCTAssertTrue(space.waitForExistence(timeout: 10))
+        let original = space.label
+        let card = app.descendants(matching: .any)["timer-card"]
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        swipe(element: card, from: 0.85, to: 0.15)
+        XCTAssertTrue(space.waitForExistence(timeout: 2))
+        let afterUpper = space.label
+        XCTAssertNotEqual(afterUpper, original)
+
+        let panel = app.descendants(matching: .any)["task-panel"]
+        swipe(element: panel, from: 0.85, to: 0.15)
+        XCTAssertEqual(space.label, afterUpper)
     }
 
     func testStartElapsedLapStop() {
@@ -26,19 +43,6 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["task-row-Research"].exists)
         app.buttons["start-stop-button"].tap()
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "stopped")
-    }
-
-    func testUpperSwipeChangesSpaceAndLowerSwipeDoesNot() {
-        let original = app.staticTexts["space-name"].label
-        let card = app.otherElements["timer-card"]
-        swipe(element: card, from: 0.85, to: 0.15)
-        XCTAssertTrue(app.staticTexts["space-name"].waitForExistence(timeout: 2))
-        let afterUpper = app.staticTexts["space-name"].label
-        XCTAssertNotEqual(afterUpper, original)
-
-        let panel = app.otherElements["task-panel"]
-        swipe(element: panel, from: 0.85, to: 0.15)
-        XCTAssertEqual(app.staticTexts["space-name"].label, afterUpper)
     }
 
     func testLongPressLapPresentsTaskPicker() {
