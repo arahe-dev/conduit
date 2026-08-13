@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import ProductivityTracker
 
 final class NotificationAndImportTests: XCTestCase {
