@@ -5,7 +5,7 @@ import SwiftData
 @MainActor
 final class TaskIntervalTests: XCTestCase {
     private func makeController(time: ControllableTimeSource) throws -> SessionController {
-        SessionController(
+        return try SessionController(
             context: ModelContext(try PersistenceController.makeContainer(inMemory: true)),
             timeSource: time,
             notifications: RecordingNotificationService(),
