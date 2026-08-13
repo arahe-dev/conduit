@@ -63,7 +63,10 @@ final class SessionController {
     func bootstrap() throws {
         try DemoDataSeeder.seedIfNeeded(context: context, force: launch.resetStore)
         try reloadSpaces()
-        if let stored = settings.selectedSpaceID, spaces.contains(where: { $0.id == stored }) {
+        if launch.screenshotMode || launch.resetStore {
+            selectedSpaceID = DemoIDs.work
+            settings.selectedSpaceID = DemoIDs.work
+        } else if let stored = settings.selectedSpaceID, spaces.contains(where: { $0.id == stored }) {
             selectedSpaceID = stored
         } else {
             selectedSpaceID = spaces.first?.id
