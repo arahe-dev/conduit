@@ -82,7 +82,7 @@ final class ProductivityTrackerUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["-UITests", "-PersistStore"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["space-name"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["space-name"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "running")
     }
 
@@ -99,7 +99,7 @@ final class ScreenshotUITests: XCTestCase {
         app.launchArguments = ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode"]
         app.launchEnvironment["UITEST_ELAPSED"] = "31.42"
         app.launch()
-        XCTAssertTrue(app.staticTexts["space-name"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["space-name"].firstMatch.waitForExistence(timeout: 5))
 
         let screenshotDir = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"] ?? NSTemporaryDirectory()
         try FileManager.default.createDirectory(atPath: screenshotDir, withIntermediateDirectories: true)
