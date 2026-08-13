@@ -66,6 +66,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.LiveActivity
         PRODUCT_NAME: ProductivityTrackerLiveActivity
+        PRODUCT_MODULE_NAME: ProductivityTrackerLiveActivity
         INFOPLIST_FILE: ProductivityTrackerLiveActivity/Info.plist
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: ProductivityTracker
@@ -80,6 +81,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.tests
+        PRODUCT_NAME: ProductivityTrackerTests
+        PRODUCT_MODULE_NAME: ProductivityTrackerTests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ProductivityTracker.app/ProductivityTracker"
         BUNDLE_LOADER: "$(TEST_HOST)"
@@ -93,6 +96,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.uitests
+        PRODUCT_NAME: ProductivityTrackerUITests
+        PRODUCT_MODULE_NAME: ProductivityTrackerUITests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: ProductivityTracker
     dependencies:
