@@ -7,21 +7,23 @@ struct StopwatchButtons: View {
 
     var body: some View {
         HStack {
-            left
+            leftButton
             Spacer()
-            right
+            rightButton
         }
-        .padding(.horizontal, 12)
-        .accessibilityIdentifier("stopwatch-buttons")
+        .padding(.horizontal, 28)
     }
 
     @ViewBuilder
-    private var left: some View {
+    private var leftButton: some View {
         switch controller.snapshot.phase.leftControl {
         case .lapDisabled:
-            circle(title: "Lap", fill: Color(white: 0.18), foreground: Color(white: 0.92).opacity(0.45), identifier: AccessibilityIDs.lapButton, enabled: false, action: {})
+            StopwatchCircleButton(kind: .lap, action: {})
+                .opacity(0.45)
+                .disabled(true)
+                .accessibilityIdentifier(AccessibilityIDs.lapButton)
         case .lap:
-            circle(title: "Lap", fill: Color(white: 0.18), foreground: Color(white: 0.92), identifier: AccessibilityIDs.lapButton, enabled: true) {
+            StopwatchCircleButton(kind: .lap) {
                 if ignoreNextLap {
                     ignoreNextLap = false
                     return
@@ -32,58 +34,29 @@ struct StopwatchButtons: View {
                 ignoreNextLap = true
                 onLongPressLap()
             }
+            .accessibilityIdentifier(AccessibilityIDs.lapButton)
+            .accessibilityHint("Long press to choose a task")
         case .reset:
-            circle(title: "Reset", fill: Color(white: 0.18), foreground: Color(white: 0.92), identifier: AccessibilityIDs.resetButton, enabled: true) {
+            StopwatchCircleButton(kind: .reset) {
                 try? controller.reset()
             }
+            .accessibilityIdentifier(AccessibilityIDs.resetButton)
         }
     }
 
     @ViewBuilder
-    private var right: some View {
+    private var rightButton: some View {
         switch controller.snapshot.phase.rightControl {
         case .start:
-            circle(
-                title: "Start",
-                fill: Color.green.opacity(0.22),
-                foreground: Color(red: 0.22, green: 0.84, blue: 0.40),
-                identifier: AccessibilityIDs.startStopButton,
-                enabled: true
-            ) {
+            StopwatchCircleButton(kind: .start) {
                 try? controller.start()
             }
+            .accessibilityIdentifier(AccessibilityIDs.startStopButton)
         case .stop:
-            circle(
-                title: "Stop",
-                fill: Color.red.opacity(0.22),
-                foreground: Color(red: 0.92, green: 0.28, blue: 0.27),
-                identifier: AccessibilityIDs.startStopButton,
-                enabled: true
-            ) {
+            StopwatchCircleButton(kind: .stop) {
                 try? controller.stop()
             }
+            .accessibilityIdentifier(AccessibilityIDs.startStopButton)
         }
-    }
-
-    private func circle(
-        title: String,
-        fill: Color,
-        foreground: Color,
-        identifier: String,
-        enabled: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(foreground)
-                .frame(width: LayoutMetrics.buttonDiameter, height: LayoutMetrics.buttonDiameter)
-                .background(Circle().fill(fill))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityIdentifier(identifier)
-        .disabled(!enabled)
-        .frame(minWidth: 44, minHeight: 44)
     }
 }

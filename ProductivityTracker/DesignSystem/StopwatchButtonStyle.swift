@@ -18,39 +18,40 @@ struct StopwatchCircleButton: View {
 
         var fill: Color {
             switch self {
-            case .lap, .reset: Color(white: 0.18)
-            case .start: Color.green.opacity(0.22)
-            case .stop: Color.red.opacity(0.22)
+            case .lap, .reset: Color.gray.opacity(0.28)
+            case .start: Color.green.opacity(0.28)
+            case .stop: Color.red.opacity(0.28)
             }
         }
 
         var foreground: Color {
             switch self {
-            case .lap, .reset: Color(white: 0.92)
-            case .start: Color(red: 0.22, green: 0.84, blue: 0.40)
-            case .stop: Color(red: 0.92, green: 0.28, blue: 0.27)
+            case .lap, .reset: .white
+            case .start: .green
+            case .stop: .red
             }
         }
     }
 
     var kind: Kind
     var action: () -> Void
-    var isEnabled: Bool = true
-    var identifier: String? = nil
     var diameter: CGFloat = LayoutMetrics.buttonDiameter
 
     var body: some View {
         Button(action: action) {
             Text(kind.title)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(kind.foreground.opacity(isEnabled ? 1 : 0.45))
+                .foregroundStyle(kind.foreground)
                 .frame(width: diameter, height: diameter)
-                .background(Circle().fill(kind.fill.opacity(isEnabled ? 1 : 0.55)))
+                .background(Circle().fill(kind.fill))
+                .overlay {
+                    Circle()
+                        .strokeBorder(kind.foreground.opacity(0.22), lineWidth: 1)
+                }
+                .glassEffect(.regular.tint(kind.foreground.opacity(0.18)).interactive(), in: .circle)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(kind.title)
-        .accessibilityIdentifier(identifier ?? kind.title.lowercased())
-        .disabled(!isEnabled)
         .frame(minWidth: 44, minHeight: 44)
     }
 }
