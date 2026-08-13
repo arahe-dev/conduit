@@ -1,5 +1,5 @@
 import Foundation
-import ActivityKit
+@preconcurrency import ActivityKit
 
 @MainActor
 protocol LiveActivityManaging: AnyObject {
