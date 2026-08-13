@@ -30,22 +30,6 @@ struct TimerScreen: View {
                 .padding(.top, 6)
                 .padding(.bottom, 8)
 
-                VStack(spacing: 0) {
-                    Spacer()
-                        .frame(height: max(120, upper - LayoutMetrics.buttonDiameter - 48))
-                    StopwatchButtons(controller: controller, onLongPressLap: { showTaskPicker = true })
-                        .padding(.horizontal, LayoutMetrics.horizontalMargin)
-                    PageDots(
-                        count: controller.spaces.count,
-                        current: controller.spaces.firstIndex(where: { $0.id == controller.selectedSpaceID }) ?? 0,
-                        accent: controller.selectedSpace?.tint.color ?? .white
-                    )
-                    .accessibilityIdentifier(AccessibilityIDs.pageIndicator)
-                    .padding(.top, 12)
-                    Spacer()
-                }
-                .allowsHitTesting(true)
-
                 Text(controller.selectedSpace?.name ?? "")
                     .font(.caption)
                     .opacity(0.01)
@@ -90,7 +74,9 @@ struct TimerScreen: View {
             ForEach(controller.spaces, id: \.id) { space in
                 StopwatchCard(
                     controller: controller,
-                    space: space
+                    space: space,
+                    showsControls: true,
+                    onLongPressLap: { showTaskPicker = true }
                 )
                 .tag(space.id as UUID)
             }

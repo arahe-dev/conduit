@@ -3,6 +3,8 @@ import SwiftUI
 struct StopwatchCard: View {
     @Bindable var controller: SessionController
     var space: Space
+    var showsControls: Bool
+    var onLongPressLap: () -> Void
 
     var body: some View {
         let snap = controller.snapshot(for: space.id)
@@ -15,7 +17,7 @@ struct StopwatchCard: View {
                 Text(space.name)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("space-name-card")
+                    .accessibilityIdentifier(showsControls ? "space-name-card" : "space-name-idle")
                     .accessibilityLabel(space.name)
                 Spacer()
             }
@@ -27,10 +29,26 @@ struct StopwatchCard: View {
             StopwatchDisplay(
                 snapshot: snap,
                 overrideElapsed: controller.displayOverrideElapsed(for: space.id),
-                isActivePage: space.id == controller.selectedSpaceID
+                isActivePage: showsControls
             )
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 18)
+
+            if showsControls {
+                StopwatchButtons(controller: controller, onLongPressLap: onLongPressLap)
+            } else {
+                Color.clear.frame(height: LayoutMetrics.buttonDiameter)
+                    .accessibilityHidden(true)
+            }
+
+            PageDots(
+                count: controller.spaces.count,
+                current: controller.spaces.firstIndex(where: { $0.id == controller.selectedSpaceID }) ?? 0,
+                accent: space.tint.color
+            )
+            .accessibilityIdentifier(AccessibilityIDs.pageIndicator)
+            .padding(.top, 18)
+            .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .contentShape(Rectangle())
