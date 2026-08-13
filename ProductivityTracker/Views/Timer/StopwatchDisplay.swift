@@ -27,7 +27,7 @@ struct StopwatchDisplay: View {
             .lineLimit(1)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 8)
-            .accessibilityIdentifier(AccessibilityIDs.stopwatch)
+            .accessibilityIdentifier(isActivePage ? AccessibilityIDs.stopwatch : "stopwatch-display-idle")
             .accessibilityLabel(ElapsedFormatter.stopwatch(elapsed))
             .accessibilityValue(snapshot.phase.rawValue)
     }
