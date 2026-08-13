@@ -21,6 +21,10 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_IDENTITY: ""
+  configs:
+    Debug:
+      ENABLE_TESTABILITY: YES
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
 configs:
   Debug: debug
   Release: release
