@@ -92,16 +92,17 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        let identifier = response.actionIdentifier
+        completionHandler()
         Task { @MainActor in
-            switch response.actionIdentifier {
+            switch identifier {
             case NotificationIdentifiers.stopAction:
-                onStop?()
+                try? AppRuntime.shared.sessionController?.stop()
             case NotificationIdentifiers.pauseAction:
-                onPause?()
+                try? AppRuntime.shared.sessionController?.pause()
             default:
-                onContinue?()
+                break
             }
-            completionHandler()
         }
     }
 }

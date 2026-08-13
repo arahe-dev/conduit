@@ -25,13 +25,12 @@ final class LiveActivityManager: LiveActivityManaging {
             elapsedAtPause: elapsed
         )
         let content = ActivityContent(state: state, staleDate: nil)
-        if let existing = Activity<SessionActivityAttributes>.activities.first {
-            Task { await existing.update(content) }
-        } else {
-            do {
-                _ = try Activity.request(attributes: attributes, content: content)
-            } catch {
-                // Live Activities are optional; the timer remains authoritative in-app.
+        let attributesToStart = attributes
+        Task { @MainActor in
+            if let existing = Activity<SessionActivityAttributes>.activities.first {
+                await existing.update(content)
+            } else {
+                _ = try? Activity.request(attributes: attributesToStart, content: content)
             }
         }
         #endif
@@ -46,14 +45,18 @@ final class LiveActivityManager: LiveActivityManaging {
             elapsedAtPause: elapsed
         )
         let content = ActivityContent(state: state, staleDate: now)
-        for activity in Activity<SessionActivityAttributes>.activities {
-            Task { await activity.end(content, dismissalPolicy: .after(.now + 8)) }
+        Task { @MainActor in
+            for activity in Activity<SessionActivityAttributes>.activities {
+                await activity.end(content, dismissalPolicy: .after(.now + 8))
+            }
         }
     }
 
     func dismiss() {
-        for activity in Activity<SessionActivityAttributes>.activities {
-            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        Task { @MainActor in
+            for activity in Activity<SessionActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
         }
     }
 }
