@@ -13,7 +13,7 @@ struct StopwatchCard: View {
                     Text(space.name)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
-                        .accessibilityIdentifier(showsControls ? AccessibilityIDs.spaceName : "space-name-idle")
+                        .accessibilityIdentifier(showsControls ? "space-name-card" : "space-name-idle")
                         .accessibilityLabel(space.name)
                     Spacer()
                 }

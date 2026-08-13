@@ -11,19 +11,19 @@ final class ProductivityTrackerUITests: XCTestCase {
     }
 
     func testLaunchShowsDefaultSpace() {
-        let space = app.descendants(matching: .any)["space-name"]
+        let space = app.descendants(matching: .any)["space-name"].firstMatch
         XCTAssertTrue(space.waitForExistence(timeout: 10))
         XCTAssertEqual(space.label, "Work")
-        XCTAssertTrue(app.descendants(matching: .any)["timer-card"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["timer-card"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["task-panel"].exists)
         XCTAssertTrue(app.buttons["start-stop-button"].exists)
     }
 
     func testUpperSwipeChangesSpaceAndLowerSwipeDoesNot() {
-        let space = app.descendants(matching: .any)["space-name"]
+        let space = app.descendants(matching: .any)["space-name"].firstMatch
         XCTAssertTrue(space.waitForExistence(timeout: 10))
         let original = space.label
-        let card = app.descendants(matching: .any)["timer-card"]
+        let card = app.descendants(matching: .any)["timer-card"].firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         swipe(element: card, from: 0.85, to: 0.15)
         XCTAssertTrue(space.waitForExistence(timeout: 2))
