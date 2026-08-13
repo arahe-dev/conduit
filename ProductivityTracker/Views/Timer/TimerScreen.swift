@@ -14,18 +14,9 @@ struct TimerScreen: View {
                 Color.black.ignoresSafeArea()
                 VStack(spacing: 0) {
                     spacePager
-                        .frame(height: upper - LayoutMetrics.buttonDiameter - 36)
+                        .frame(height: upper)
                         .accessibilityElement(children: .contain)
                         .accessibilityIdentifier(AccessibilityIDs.timerCard)
-                    StopwatchButtons(controller: controller, onLongPressLap: { showTaskPicker = true })
-                    PageDots(
-                        count: controller.spaces.count,
-                        current: controller.spaces.firstIndex(where: { $0.id == controller.selectedSpaceID }) ?? 0,
-                        accent: controller.selectedSpace?.tint.color ?? .white
-                    )
-                    .accessibilityIdentifier(AccessibilityIDs.pageIndicator)
-                    .padding(.top, 14)
-                    .padding(.bottom, 8)
                     TaskPanel(
                         controller: controller,
                         onRename: { task in
@@ -38,6 +29,22 @@ struct TimerScreen: View {
                 .padding(.horizontal, LayoutMetrics.horizontalMargin)
                 .padding(.top, 6)
                 .padding(.bottom, 8)
+
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(height: max(120, upper - LayoutMetrics.buttonDiameter - 48))
+                    StopwatchButtons(controller: controller, onLongPressLap: { showTaskPicker = true })
+                        .padding(.horizontal, LayoutMetrics.horizontalMargin)
+                    PageDots(
+                        count: controller.spaces.count,
+                        current: controller.spaces.firstIndex(where: { $0.id == controller.selectedSpaceID }) ?? 0,
+                        accent: controller.selectedSpace?.tint.color ?? .white
+                    )
+                    .accessibilityIdentifier(AccessibilityIDs.pageIndicator)
+                    .padding(.top, 12)
+                    Spacer()
+                }
+                .allowsHitTesting(true)
 
                 Text(controller.selectedSpace?.name ?? "")
                     .font(.caption)
