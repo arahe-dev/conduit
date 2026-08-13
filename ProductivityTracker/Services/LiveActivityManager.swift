@@ -20,7 +20,9 @@ final class LiveActivityManager: LiveActivityManaging {
         let state = LiveActivityPresentation.content(
             spaceName: space.name,
             taskName: taskName,
-            snapshot: snapshot,
+            phaseRaw: snapshot.phase.rawValue,
+            isRunning: snapshot.isRunning,
+            elapsed: snapshot.elapsed(at: now),
             now: now
         )
         let content = ActivityContent(state: state, staleDate: nil)
@@ -59,7 +61,9 @@ final class NullLiveActivityManager: LiveActivityManaging {
         let state = LiveActivityPresentation.content(
             spaceName: space.name,
             taskName: taskName,
-            snapshot: snapshot,
+            phaseRaw: snapshot.phase.rawValue,
+            isRunning: snapshot.isRunning,
+            elapsed: snapshot.elapsed(at: now),
             now: now
         )
         lastState = state

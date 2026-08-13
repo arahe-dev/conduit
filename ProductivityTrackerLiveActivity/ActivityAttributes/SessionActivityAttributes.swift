@@ -35,16 +35,17 @@ enum LiveActivityPresentation {
     static func content(
         spaceName: String,
         taskName: String,
-        snapshot: TimerSnapshot,
+        phaseRaw: String,
+        isRunning: Bool,
+        elapsed: TimeInterval,
         now: Date
     ) -> SessionActivityAttributes.ContentState {
-        let elapsed = snapshot.elapsed(at: now)
-        return SessionActivityAttributes.ContentState(
+        SessionActivityAttributes.ContentState(
             spaceName: spaceName,
             taskName: taskName,
-            phaseRaw: snapshot.phase.rawValue,
+            phaseRaw: phaseRaw,
             displayStart: now.addingTimeInterval(-elapsed),
-            isRunning: snapshot.isRunning,
+            isRunning: isRunning,
             elapsedAtPause: elapsed
         )
     }
