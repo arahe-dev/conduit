@@ -14,9 +14,18 @@ struct TimerScreen: View {
                 Color.black.ignoresSafeArea()
                 VStack(spacing: 0) {
                     spacePager
-                        .frame(height: upper)
+                        .frame(height: upper - LayoutMetrics.buttonDiameter - 36)
                         .accessibilityElement(children: .contain)
                         .accessibilityIdentifier(AccessibilityIDs.timerCard)
+                    StopwatchButtons(controller: controller, onLongPressLap: { showTaskPicker = true })
+                    PageDots(
+                        count: controller.spaces.count,
+                        current: controller.spaces.firstIndex(where: { $0.id == controller.selectedSpaceID }) ?? 0,
+                        accent: controller.selectedSpace?.tint.color ?? .white
+                    )
+                    .accessibilityIdentifier(AccessibilityIDs.pageIndicator)
+                    .padding(.top, 14)
+                    .padding(.bottom, 8)
                     TaskPanel(
                         controller: controller,
                         onRename: { task in
@@ -74,9 +83,7 @@ struct TimerScreen: View {
             ForEach(controller.spaces, id: \.id) { space in
                 StopwatchCard(
                     controller: controller,
-                    space: space,
-                    showsControls: space.id == controller.selectedSpaceID,
-                    onLongPressLap: { showTaskPicker = true }
+                    space: space
                 )
                 .tag(space.id as UUID)
             }
