@@ -12,15 +12,13 @@ struct NotificationIdentifiers {
     }
 }
 
-@MainActor
 protocol NotificationScheduling: AnyObject {
-    func requestAuthorizationIfNeeded() async
+    func requestAuthorizationIfNeeded()
     func scheduleDistractionReminder(sessionID: UUID, spaceName: String, elapsed: TimeInterval, after seconds: TimeInterval)
     func cancelDistractionReminder(sessionID: UUID)
     func cancelAllDistractionReminders()
 }
 
-@MainActor
 final class NotificationService: NSObject, NotificationScheduling, UNUserNotificationCenterDelegate {
     private let center: UNUserNotificationCenter
     var onContinue: (@MainActor () -> Void)?
@@ -56,10 +54,11 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
         center.setNotificationCategories([category])
     }
 
-    func requestAuthorizationIfNeeded() async {
-        let settings = await center.notificationSettings()
-        guard settings.authorizationStatus == .notDetermined else { return }
-        _ = try? await center.requestAuthorization(options: [.alert, .sound])
+    func requestAuthorizationIfNeeded() {
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .notDetermined else { return }
+            self.center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        }
     }
 
     func scheduleDistractionReminder(sessionID: UUID, spaceName: String, elapsed: TimeInterval, after seconds: TimeInterval) {
@@ -107,7 +106,6 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
     }
 }
 
-@MainActor
 final class RecordingNotificationService: NotificationScheduling {
     struct Request: Equatable {
         var sessionID: UUID
@@ -121,7 +119,7 @@ final class RecordingNotificationService: NotificationScheduling {
     var cancelledAll = false
     var authorizationRequested = false
 
-    func requestAuthorizationIfNeeded() async {
+    func requestAuthorizationIfNeeded() {
         authorizationRequested = true
     }
 

@@ -123,9 +123,7 @@ final class SessionController {
         try engine.start(now: now, sessionID: session.id, spaceID: space.id, taskID: task?.id)
         try persistSessionState(session)
         Haptics.start()
-        Task { @MainActor in
-            await self.notifications.requestAuthorizationIfNeeded()
-        }
+        notifications.requestAuthorizationIfNeeded()
         liveActivity.startOrUpdate(from: self, at: now)
         try context.save()
     }
