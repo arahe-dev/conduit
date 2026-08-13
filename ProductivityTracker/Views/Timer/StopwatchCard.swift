@@ -7,7 +7,6 @@ struct StopwatchCard: View {
     var onLongPressLap: () -> Void
 
     var body: some View {
-        let snap = controller.snapshot(for: space.id)
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Circle()
@@ -27,8 +26,8 @@ struct StopwatchCard: View {
             Spacer(minLength: 4)
 
             StopwatchDisplay(
-                snapshot: snap,
-                overrideElapsed: controller.displayOverrideElapsed(for: space.id),
+                controller: controller,
+                spaceID: space.id,
                 isActivePage: showsControls
             )
 

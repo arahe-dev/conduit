@@ -29,6 +29,7 @@ final class SessionController {
     private let launch: LaunchConfiguration
 
     var snapshot: TimerSnapshot {
+        _ = mutation
         guard let id = selectedSpaceID else {
             return .idle(spaceID: DemoIDs.work)
         }
@@ -139,7 +140,8 @@ final class SessionController {
     }
 
     func snapshot(for spaceID: UUID) -> TimerSnapshot {
-        engine(for: spaceID).snapshot
+        _ = mutation
+        return snapshots[spaceID] ?? engine(for: spaceID).snapshot
     }
 
     func start() throws {

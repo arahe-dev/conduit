@@ -1,24 +1,26 @@
 import SwiftUI
 
 struct StopwatchDisplay: View {
-    var snapshot: TimerSnapshot
-    var overrideElapsed: TimeInterval?
+    @Bindable var controller: SessionController
+    var spaceID: UUID
     var isActivePage: Bool
 
     var body: some View {
-        let running = snapshot.isRunning && isActivePage && overrideElapsed == nil
+        let snap = controller.snapshot(for: spaceID)
+        let overrideElapsed = controller.displayOverrideElapsed(for: spaceID)
+        let running = snap.isRunning && isActivePage && overrideElapsed == nil
         Group {
             if running {
                 TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
-                    digits(snapshot.elapsed(at: timeline.date))
+                    digits(snap.elapsed(at: timeline.date), phase: snap.phase.rawValue)
                 }
             } else {
-                digits(overrideElapsed ?? snapshot.elapsed(at: Date()))
+                digits(overrideElapsed ?? snap.elapsed(at: Date()), phase: snap.phase.rawValue)
             }
         }
     }
 
-    private func digits(_ elapsed: TimeInterval) -> some View {
+    private func digits(_ elapsed: TimeInterval, phase: String) -> some View {
         Text(ElapsedFormatter.stopwatch(elapsed))
             .font(.system(size: LayoutMetrics.stopwatchSize, weight: .thin, design: .default))
             .monospacedDigit()
@@ -29,6 +31,6 @@ struct StopwatchDisplay: View {
             .padding(.horizontal, 8)
             .accessibilityIdentifier(isActivePage ? AccessibilityIDs.stopwatch : "stopwatch-display-idle")
             .accessibilityLabel(ElapsedFormatter.stopwatch(elapsed))
-            .accessibilityValue(snapshot.phase.rawValue)
+            .accessibilityValue(phase)
     }
 }
