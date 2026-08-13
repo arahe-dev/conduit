@@ -47,7 +47,7 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertTrue(startStop.waitForExistence(timeout: 5))
         XCTAssertEqual(startStop.label, "Start")
         startStop.tap()
-        XCTAssertTrue(startStop.wait(forLabel: "Stop", timeout: 3))
+        XCTAssertTrue(startStop.waitUntilLabelEquals("Stop", timeout: 3))
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "running")
         XCTAssertTrue(control("lap-button").isEnabled)
         startStop.tap()
@@ -59,7 +59,7 @@ final class ProductivityTrackerUITests: XCTestCase {
 
     func testStartElapsedLapStop() {
         control("start-stop-button").tap()
-        XCTAssertTrue(control("start-stop-button").wait(forLabel: "Stop", timeout: 3))
+        XCTAssertTrue(control("start-stop-button").waitUntilLabelEquals("Stop", timeout: 3))
         XCTAssertTrue(app.staticTexts["stopwatch-display"].waitForExistence(timeout: 2))
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "running")
         control("lap-button").tap()
@@ -70,7 +70,7 @@ final class ProductivityTrackerUITests: XCTestCase {
 
     func testTaskTapSelectsTask() {
         control("start-stop-button").tap()
-        XCTAssertTrue(control("start-stop-button").wait(forLabel: "Stop", timeout: 3))
+        XCTAssertTrue(control("start-stop-button").waitUntilLabelEquals("Stop", timeout: 3))
         let email = app.descendants(matching: .any)["task-row-Email"].firstMatch
         XCTAssertTrue(email.waitForExistence(timeout: 2))
         email.tap()
@@ -79,7 +79,7 @@ final class ProductivityTrackerUITests: XCTestCase {
 
     func testLongPressLapPresentsTaskPickerWithoutLapping() {
         control("start-stop-button").tap()
-        XCTAssertTrue(control("start-stop-button").wait(forLabel: "Stop", timeout: 3))
+        XCTAssertTrue(control("start-stop-button").waitUntilLabelEquals("Stop", timeout: 3))
         let deep = app.descendants(matching: .any)["task-row-Deep Work"].firstMatch
         XCTAssertTrue(deep.waitForExistence(timeout: 2))
         control("lap-button").press(forDuration: 0.85)
@@ -123,7 +123,7 @@ final class ProductivityTrackerUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.descendants(matching: .any)["start-stop-button"].firstMatch.waitForExistence(timeout: 8))
         app.descendants(matching: .any)["start-stop-button"].firstMatch.tap()
-        XCTAssertTrue(app.descendants(matching: .any)["start-stop-button"].firstMatch.wait(forLabel: "Stop", timeout: 3))
+        XCTAssertTrue(app.descendants(matching: .any)["start-stop-button"].firstMatch.waitUntilLabelEquals("Stop", timeout: 3))
         let runningValue = app.staticTexts["stopwatch-display"].value as? String
         XCTAssertEqual(runningValue, "running")
         app.terminate()
@@ -137,6 +137,14 @@ final class ProductivityTrackerUITests: XCTestCase {
         let start = element.coordinate(withNormalizedOffset: CGVector(dx: startX, dy: 0.5))
         let end = element.coordinate(withNormalizedOffset: CGVector(dx: endX, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: end)
+    }
+}
+
+extension XCUIElement {
+    func waitUntilLabelEquals(_ label: String, timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "label == %@", label)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 }
 
