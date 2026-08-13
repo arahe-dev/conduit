@@ -3,7 +3,6 @@ import SwiftUI
 struct StopwatchButtons: View {
     @Bindable var controller: SessionController
     var onLongPressLap: () -> Void
-    @State private var ignoreNextLap = false
 
     var body: some View {
         HStack {
@@ -23,19 +22,10 @@ struct StopwatchButtons: View {
                 .disabled(true)
                 .accessibilityIdentifier(AccessibilityIDs.lapButton)
         case .lap:
-            StopwatchCircleButton(kind: .lap) {
-                if ignoreNextLap {
-                    ignoreNextLap = false
-                    return
-                }
-                try? controller.lap()
-            }
-            .onLongPressGesture(minimumDuration: 0.55) {
-                ignoreNextLap = true
-                onLongPressLap()
-            }
-            .accessibilityIdentifier(AccessibilityIDs.lapButton)
-            .accessibilityHint("Long press to choose a task")
+            LapControl(
+                onTap: { try? controller.lap() },
+                onLongPress: onLongPressLap
+            )
         case .reset:
             StopwatchCircleButton(kind: .reset) {
                 try? controller.reset()
@@ -58,5 +48,48 @@ struct StopwatchButtons: View {
             }
             .accessibilityIdentifier(AccessibilityIDs.startStopButton)
         }
+    }
+}
+
+private struct LapControl: View {
+    var onTap: () -> Void
+    var onLongPress: () -> Void
+    @State private var pressStarted: Date?
+    private let kind = StopwatchCircleButton.Kind.lap
+
+    var body: some View {
+        Text(kind.title)
+            .font(.body.weight(.semibold))
+            .foregroundStyle(kind.foreground)
+            .frame(width: LayoutMetrics.buttonDiameter, height: LayoutMetrics.buttonDiameter)
+            .background(Circle().fill(kind.fill))
+            .overlay {
+                Circle()
+                    .strokeBorder(kind.foreground.opacity(0.22), lineWidth: 1)
+            }
+            .glassEffect(.regular.tint(kind.foreground.opacity(0.18)).interactive(), in: .circle)
+            .contentShape(Circle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if pressStarted == nil {
+                            pressStarted = Date()
+                        }
+                    }
+                    .onEnded { _ in
+                        let duration = Date().timeIntervalSince(pressStarted ?? Date())
+                        pressStarted = nil
+                        if duration >= 0.55 {
+                            onLongPress()
+                        } else {
+                            onTap()
+                        }
+                    }
+            )
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel(kind.title)
+            .accessibilityIdentifier(AccessibilityIDs.lapButton)
+            .accessibilityHint("Long press to choose a task")
+            .frame(minWidth: 44, minHeight: 44)
     }
 }

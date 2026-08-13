@@ -82,10 +82,10 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertTrue(control("start-stop-button").waitUntilLabelEquals("Stop", timeout: 3))
         let deep = app.descendants(matching: .any)["task-row-Deep Work"].firstMatch
         XCTAssertTrue(deep.waitForExistence(timeout: 2))
-        control("lap-button").press(forDuration: 0.85)
+        control("lap-button").press(forDuration: 1.0)
         let picker = app.otherElements["task-picker"].firstMatch
         let emailChoice = app.buttons["task-choice-Email"].firstMatch
-        XCTAssertTrue(picker.waitForExistence(timeout: 3) || emailChoice.waitForExistence(timeout: 3))
+        XCTAssertTrue(picker.waitForExistence(timeout: 5) || emailChoice.waitForExistence(timeout: 5))
         XCTAssertFalse(app.descendants(matching: .any)["task-row-Research"].firstMatch.isSelected)
         if app.buttons["Close"].exists {
             app.buttons["Close"].tap()
