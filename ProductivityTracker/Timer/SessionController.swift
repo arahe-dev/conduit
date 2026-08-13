@@ -139,7 +139,7 @@ final class SessionController {
     }
 
     func snapshot(for spaceID: UUID) -> TimerSnapshot {
-        snapshots[spaceID] ?? engine(for: spaceID).snapshot
+        engine(for: spaceID).snapshot
     }
 
     func start() throws {
@@ -253,6 +253,7 @@ final class SessionController {
                 session.activeTaskID = task.id
             }
             engine.selectTask(task.id)
+            publish(engine)
             Haptics.selection()
             liveActivity.startOrUpdate(from: self, at: now)
         case .stopped:
@@ -260,12 +261,13 @@ final class SessionController {
                 session.activeTaskID = task.id
             }
             engine.selectTask(task.id)
+            publish(engine)
             Haptics.selection()
         case .idle:
             engine.selectTask(task.id)
+            publish(engine)
             Haptics.selection()
         }
-        publish(engine)
         try context.save()
         noteChange()
     }
@@ -336,6 +338,11 @@ final class SessionController {
 
     func setDefaultTask(_ task: TaskItem?, for space: Space) throws {
         space.defaultTaskID = task?.id
+        let engine = engine(for: space.id)
+        if engine.snapshot.isIdle {
+            engine.selectTask(task?.id ?? space.enabledTasksSorted.first?.id)
+            publish(engine)
+        }
         try context.save()
         try reloadSpaces()
     }

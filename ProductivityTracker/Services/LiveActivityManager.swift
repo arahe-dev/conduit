@@ -28,8 +28,7 @@ final class LiveActivityManager: LiveActivityManaging {
         let content = ActivityContent(state: state, staleDate: nil)
         let attributes = SessionActivityAttributes(sessionID: sessionID)
         Task { @MainActor in
-            let activities = Activity<SessionActivityAttributes>.activities
-            if let existing = activities.first(where: { $0.attributes.sessionID == sessionID }) ?? activities.first {
+            if let existing = Activity<SessionActivityAttributes>.activities.first {
                 await existing.update(content)
             } else {
                 _ = try? Activity.request(attributes: attributes, content: content)

@@ -19,9 +19,7 @@ struct StopwatchButtons: View {
     private var leftButton: some View {
         switch controller.snapshot.phase.leftControl {
         case .lapDisabled:
-            StopwatchCircleButton(kind: .lap, action: {})
-                .opacity(0.38)
-                .disabled(true)
+            StopwatchCircleButton(kind: .lap, action: {}, isEnabled: false)
                 .accessibilityIdentifier(AccessibilityIDs.lapButton)
         case .lap:
             StopwatchCircleButton(kind: .lap) {

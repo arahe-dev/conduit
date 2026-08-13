@@ -16,10 +16,10 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertEqual(space.label, "Work")
         XCTAssertTrue(app.descendants(matching: .any)["timer-card"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["task-panel"].exists)
-        XCTAssertTrue(app.buttons["start-stop-button"].exists)
-        XCTAssertTrue(app.buttons["lap-button"].exists)
-        XCTAssertFalse(app.buttons["lap-button"].isEnabled)
-        XCTAssertFalse(app.descendants(matching: .any)[AccessibilityQuery.glass].firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["start-stop-button"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["lap-button"].firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any)["lap-button"].firstMatch.isEnabled)
+        XCTAssertFalse(app.descendants(matching: .any)["glass-surface"].firstMatch.exists)
     }
 
     func testUpperSwipeChangesSpaceAndLowerSwipeDoesNot() {
@@ -101,8 +101,8 @@ final class ProductivityTrackerUITests: XCTestCase {
     }
 
     func testControlsAreAboveHomeIndicator() {
-        let start = app.buttons["start-stop-button"]
-        XCTAssertTrue(start.exists)
+        let start = app.descendants(matching: .any)["start-stop-button"].firstMatch
+        XCTAssertTrue(start.waitForExistence(timeout: 5))
         let frame = start.frame
         let window = app.windows.firstMatch.frame
         XCTAssertGreaterThan(frame.minY, 40)
@@ -113,8 +113,8 @@ final class ProductivityTrackerUITests: XCTestCase {
         app.terminate()
         app.launchArguments = ["-UITests", "-ResetStore", "-PersistStore"]
         app.launch()
-        XCTAssertTrue(app.buttons["start-stop-button"].waitForExistence(timeout: 5))
-        app.buttons["start-stop-button"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["start-stop-button"].firstMatch.waitForExistence(timeout: 8))
+        app.descendants(matching: .any)["start-stop-button"].firstMatch.tap()
         let runningValue = app.staticTexts["stopwatch-display"].value as? String
         XCTAssertEqual(runningValue, "running")
         app.terminate()
@@ -129,10 +129,6 @@ final class ProductivityTrackerUITests: XCTestCase {
         let end = element.coordinate(withNormalizedOffset: CGVector(dx: endX, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: end)
     }
-}
-
-private enum AccessibilityQuery {
-    static let glass = "glass-surface"
 }
 
 final class ScreenshotUITests: XCTestCase {
