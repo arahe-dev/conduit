@@ -4,55 +4,38 @@ import ActivityKit
 @MainActor
 protocol LiveActivityManaging: AnyObject {
     func startOrUpdate(from controller: SessionController, at now: Date)
-    func end(at now: Date, elapsed: TimeInterval)
-    func dismiss()
+    func dismissImmediate()
 }
 
 @MainActor
 final class LiveActivityManager: LiveActivityManaging {
     func startOrUpdate(from controller: SessionController, at now: Date) {
-        #if !targetEnvironment(simulator) || true
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let snapshot = controller.snapshot
-        guard snapshot.sessionID != nil else { return }
-        let attributes = SessionActivityAttributes(spaceName: controller.selectedSpace?.name ?? "Space")
-        let elapsed = controller.displayedElapsed(at: now)
-        let state = SessionActivityAttributes.ContentState(
-            taskName: controller.activeTask?.name ?? "Task",
-            phaseRaw: snapshot.phase.rawValue,
-            displayStart: now.addingTimeInterval(-elapsed),
-            isRunning: snapshot.phase == .running,
-            elapsedAtPause: elapsed
+        guard let space = controller.liveActivitySpace() else { return }
+        let snapshot = controller.snapshot(for: space.id)
+        guard let sessionID = snapshot.sessionID else { return }
+        let taskName = space.tasks.first(where: { $0.id == snapshot.currentTaskID })?.name
+            ?? controller.activeTask?.name
+            ?? "Task"
+        let state = LiveActivityPresentation.content(
+            spaceName: space.name,
+            taskName: taskName,
+            snapshot: snapshot,
+            now: now
         )
         let content = ActivityContent(state: state, staleDate: nil)
-        let attributesToStart = attributes
+        let attributes = SessionActivityAttributes(sessionID: sessionID)
         Task { @MainActor in
-            if let existing = Activity<SessionActivityAttributes>.activities.first {
+            if let existing = Activity<SessionActivityAttributes>.activities.first(where: { $0.attributes.sessionID == sessionID })
+                ?? Activity<SessionActivityAttributes>.activities.first {
                 await existing.update(content)
             } else {
-                _ = try? Activity.request(attributes: attributesToStart, content: content)
-            }
-        }
-        #endif
-    }
-
-    func end(at now: Date, elapsed: TimeInterval) {
-        let state = SessionActivityAttributes.ContentState(
-            taskName: "Stopped",
-            phaseRaw: TimerPhase.stopped.rawValue,
-            displayStart: now.addingTimeInterval(-elapsed),
-            isRunning: false,
-            elapsedAtPause: elapsed
-        )
-        let content = ActivityContent(state: state, staleDate: now)
-        Task { @MainActor in
-            for activity in Activity<SessionActivityAttributes>.activities {
-                await activity.end(content, dismissalPolicy: .after(.now + 8))
+                _ = try? Activity.request(attributes: attributes, content: content)
             }
         }
     }
 
-    func dismiss() {
+    func dismissImmediate() {
         Task { @MainActor in
             for activity in Activity<SessionActivityAttributes>.activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
@@ -64,16 +47,27 @@ final class LiveActivityManager: LiveActivityManaging {
 @MainActor
 final class NullLiveActivityManager: LiveActivityManaging {
     var started = 0
-    var ended = 0
+    var dismissed = 0
+    var lastState: SessionActivityAttributes.ContentState?
+    var states: [SessionActivityAttributes.ContentState] = []
+
     func startOrUpdate(from controller: SessionController, at now: Date) {
         started += 1
-        _ = controller
-        _ = now
+        guard let space = controller.liveActivitySpace() ?? controller.selectedSpace else { return }
+        let snapshot = controller.snapshot(for: space.id)
+        let taskName = space.tasks.first(where: { $0.id == snapshot.currentTaskID })?.name ?? "Task"
+        let state = LiveActivityPresentation.content(
+            spaceName: space.name,
+            taskName: taskName,
+            snapshot: snapshot,
+            now: now
+        )
+        lastState = state
+        states.append(state)
     }
-    func end(at now: Date, elapsed: TimeInterval) {
-        ended += 1
-        _ = now
-        _ = elapsed
+
+    func dismissImmediate() {
+        dismissed += 1
+        lastState = nil
     }
-    func dismiss() {}
 }

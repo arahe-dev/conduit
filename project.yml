@@ -66,6 +66,7 @@ targets:
     sources:
       - path: ProductivityTrackerLiveActivity
       - path: ProductivityTracker/Timer/ElapsedFormatter.swift
+      - path: ProductivityTracker/LiveActivity/LiveActivityPresentation.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.LiveActivity

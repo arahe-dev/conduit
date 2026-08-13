@@ -36,10 +36,6 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
             identifier: NotificationIdentifiers.continueAction,
             title: "Continue"
         )
-        let pauseAction = UNNotificationAction(
-            identifier: NotificationIdentifiers.pauseAction,
-            title: "Pause"
-        )
         let stopAction = UNNotificationAction(
             identifier: NotificationIdentifiers.stopAction,
             title: "Stop",
@@ -47,7 +43,7 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
         )
         let category = UNNotificationCategory(
             identifier: NotificationIdentifiers.distractionCategory,
-            actions: [continueAction, pauseAction, stopAction],
+            actions: [continueAction, stopAction],
             intentIdentifiers: [],
             options: []
         )
@@ -64,8 +60,8 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
     func scheduleDistractionReminder(sessionID: UUID, spaceName: String, elapsed: TimeInterval, after seconds: TimeInterval) {
         cancelDistractionReminder(sessionID: sessionID)
         let content = UNMutableNotificationContent()
-        content.title = "\(spaceName) timer: \(ElapsedFormatter.compact(elapsed))"
-        content.body = "Still working?"
+        content.title = "\(spaceName) · \(ElapsedFormatter.compact(elapsed))"
+        content.body = "Timer is still running."
         content.categoryIdentifier = NotificationIdentifiers.distractionCategory
         content.sound = .default
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, seconds), repeats: false)
@@ -98,8 +94,6 @@ final class NotificationService: NSObject, NotificationScheduling, UNUserNotific
             switch identifier {
             case NotificationIdentifiers.stopAction:
                 try? AppRuntime.shared.sessionController?.stop()
-            case NotificationIdentifiers.pauseAction:
-                try? AppRuntime.shared.sessionController?.pause()
             default:
                 break
             }

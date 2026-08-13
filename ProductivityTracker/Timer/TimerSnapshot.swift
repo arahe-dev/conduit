@@ -2,39 +2,41 @@ import Foundation
 
 struct TimerSnapshot: Equatable, Sendable {
     var phase: TimerPhase
+    var spaceID: UUID
     var sessionID: UUID?
-    var spaceID: UUID?
-    var activeTaskID: UUID?
-    var sessionStartedAt: Date?
-    var accumulatedActiveDuration: TimeInterval
-    var currentSegmentStartedAt: Date?
-    var lastStoppedElapsed: TimeInterval
+    var currentTaskID: UUID?
+    var startedAt: Date?
+    var accumulatedBeforeCurrentRun: TimeInterval
+    var lastTick: Date
+    var liveActivityID: String?
 
-    static let idle = TimerSnapshot(
-        phase: .idle,
-        sessionID: nil,
-        spaceID: nil,
-        activeTaskID: nil,
-        sessionStartedAt: nil,
-        accumulatedActiveDuration: 0,
-        currentSegmentStartedAt: nil,
-        lastStoppedElapsed: 0
-    )
+    static func idle(spaceID: UUID, currentTaskID: UUID? = nil) -> TimerSnapshot {
+        TimerSnapshot(
+            phase: .idle,
+            spaceID: spaceID,
+            sessionID: nil,
+            currentTaskID: currentTaskID,
+            startedAt: nil,
+            accumulatedBeforeCurrentRun: 0,
+            lastTick: Date(timeIntervalSince1970: 0),
+            liveActivityID: nil
+        )
+    }
 
     func elapsed(at now: Date) -> TimeInterval {
         switch phase {
         case .idle:
             return 0
         case .stopped:
-            return lastStoppedElapsed
-        case .paused:
-            return accumulatedActiveDuration
+            return accumulatedBeforeCurrentRun
         case .running:
-            let extra = currentSegmentStartedAt.map { now.timeIntervalSince($0) } ?? 0
-            return max(0, accumulatedActiveDuration + extra)
+            guard let startedAt else { return accumulatedBeforeCurrentRun }
+            return accumulatedBeforeCurrentRun + now.timeIntervalSince(startedAt)
         }
     }
 
     var isRunning: Bool { phase == .running }
-    var isActiveSession: Bool { phase == .running || phase == .paused }
+    var isStopped: Bool { phase == .stopped }
+    var isIdle: Bool { phase == .idle }
+    var hasLiveActivity: Bool { liveActivityID != nil }
 }

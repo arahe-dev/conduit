@@ -18,17 +18,17 @@ struct StopwatchCircleButton: View {
 
         var fill: Color {
             switch self {
-            case .lap, .reset: Color.gray.opacity(0.28)
-            case .start: Color.green.opacity(0.28)
-            case .stop: Color.red.opacity(0.28)
+            case .lap, .reset: Color(white: 0.18)
+            case .start: Color.green.opacity(0.22)
+            case .stop: Color.red.opacity(0.22)
             }
         }
 
         var foreground: Color {
             switch self {
-            case .lap, .reset: .white
-            case .start: .green
-            case .stop: .red
+            case .lap, .reset: Color(white: 0.92)
+            case .start: Color(red: 0.22, green: 0.84, blue: 0.40)
+            case .stop: Color(red: 0.92, green: 0.28, blue: 0.27)
             }
         }
     }
@@ -44,11 +44,6 @@ struct StopwatchCircleButton: View {
                 .foregroundStyle(kind.foreground)
                 .frame(width: diameter, height: diameter)
                 .background(Circle().fill(kind.fill))
-                .overlay {
-                    Circle()
-                        .strokeBorder(kind.foreground.opacity(0.22), lineWidth: 1)
-                }
-                .glassEffect(.regular.tint(kind.foreground.opacity(0.18)).interactive(), in: .circle)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(kind.title)

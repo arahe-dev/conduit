@@ -3,55 +3,57 @@ import SwiftUI
 struct StopwatchButtons: View {
     @Bindable var controller: SessionController
     var onLongPressLap: () -> Void
+    @State private var ignoreNextLap = false
 
     var body: some View {
-        GlassEffectContainer(spacing: 80) {
-            HStack {
-                leftButton
-                Spacer()
-                rightButton
-            }
-            .padding(.horizontal, 28)
+        HStack {
+            leftButton
+            Spacer()
+            rightButton
         }
+        .padding(.horizontal, 12)
+        .accessibilityIdentifier("stopwatch-buttons")
     }
 
     @ViewBuilder
     private var leftButton: some View {
-        switch controller.snapshot.phase {
-        case .idle, .stopped:
+        switch controller.snapshot.phase.leftControl {
+        case .lapDisabled:
             StopwatchCircleButton(kind: .lap, action: {})
-                .opacity(0.45)
+                .opacity(0.38)
                 .disabled(true)
                 .accessibilityIdentifier(AccessibilityIDs.lapButton)
-        case .running, .paused:
+        case .lap:
             StopwatchCircleButton(kind: .lap) {
+                if ignoreNextLap {
+                    ignoreNextLap = false
+                    return
+                }
                 try? controller.lap()
             }
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.55).onEnded { _ in
-                    onLongPressLap()
-                }
-            )
+            .onLongPressGesture(minimumDuration: 0.55, pressing: { _ in }, perform: {
+                ignoreNextLap = true
+                onLongPressLap()
+            })
             .accessibilityIdentifier(AccessibilityIDs.lapButton)
             .accessibilityHint("Long press to choose a task")
+        case .reset:
+            StopwatchCircleButton(kind: .reset) {
+                try? controller.reset()
+            }
+            .accessibilityIdentifier(AccessibilityIDs.resetButton)
         }
     }
 
     @ViewBuilder
     private var rightButton: some View {
-        switch controller.snapshot.phase {
-        case .idle, .paused:
+        switch controller.snapshot.phase.rightControl {
+        case .start:
             StopwatchCircleButton(kind: .start) {
                 try? controller.start()
             }
             .accessibilityIdentifier(AccessibilityIDs.startStopButton)
-        case .stopped:
-            StopwatchCircleButton(kind: .start) {
-                controller.resetStoppedDisplay()
-                try? controller.start()
-            }
-            .accessibilityIdentifier(AccessibilityIDs.startStopButton)
-        case .running:
+        case .stop:
             StopwatchCircleButton(kind: .stop) {
                 try? controller.stop()
             }

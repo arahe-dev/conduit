@@ -3,26 +3,32 @@ import SwiftUI
 struct TimerScreen: View {
     @Bindable var controller: SessionController
     @Binding var showSettings: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showTaskPicker = false
+    @State private var renamingTask: TaskItem?
+    @State private var renameText = ""
 
     var body: some View {
         GeometryReader { proxy in
-            let usable = proxy.size.height
-            let upper = usable * LayoutMetrics.upperFraction
+            let upper = proxy.size.height * LayoutMetrics.upperFraction
             ZStack(alignment: .topTrailing) {
                 Color.black.ignoresSafeArea()
-                VStack(spacing: LayoutMetrics.stackSpacing) {
+                VStack(spacing: 0) {
                     spacePager
                         .frame(height: upper)
                         .accessibilityElement(children: .contain)
                         .accessibilityIdentifier(AccessibilityIDs.timerCard)
-                    TaskPanel(controller: controller)
-                        .frame(maxHeight: .infinity)
+                    TaskPanel(
+                        controller: controller,
+                        onRename: { task in
+                            renamingTask = task
+                            renameText = task.name
+                        }
+                    )
+                    .frame(maxHeight: .infinity)
                 }
                 .padding(.horizontal, LayoutMetrics.horizontalMargin)
-                .padding(.top, 4)
-                .padding(.bottom, 10)
+                .padding(.top, 6)
+                .padding(.bottom, 8)
 
                 Text(controller.selectedSpace?.name ?? "")
                     .font(.caption)
@@ -42,11 +48,24 @@ struct TimerScreen: View {
                 }
                 .accessibilityIdentifier(AccessibilityIDs.settingsButton)
                 .accessibilityLabel("Settings")
-                .padding(.trailing, 6)
+                .padding(.trailing, 2)
             }
         }
         .sheet(isPresented: $showTaskPicker) {
             TaskPickerSheet(controller: controller, isPresented: $showTaskPicker)
+        }
+        .alert("Rename", isPresented: Binding(
+            get: { renamingTask != nil },
+            set: { if !$0 { renamingTask = nil } }
+        )) {
+            TextField("Name", text: $renameText)
+            Button("Cancel", role: .cancel) { renamingTask = nil }
+            Button("Save") {
+                if let task = renamingTask {
+                    try? controller.renameTask(task, to: renameText)
+                }
+                renamingTask = nil
+            }
         }
     }
 
@@ -63,7 +82,7 @@ struct TimerScreen: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .animation(reduceMotion ? nil : .interactiveSpring, value: controller.selectedSpaceID)
+        .transaction { $0.animation = nil }
     }
 
     private var selectedSpaceBinding: Binding<UUID> {

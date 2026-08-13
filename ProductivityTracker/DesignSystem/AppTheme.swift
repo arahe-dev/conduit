@@ -6,18 +6,20 @@ enum AccessibilityIDs {
     static let spaceName = "space-name"
     static let stopwatch = "stopwatch-display"
     static let lapButton = "lap-button"
+    static let resetButton = "reset-button"
     static let startStopButton = "start-stop-button"
     static let pageIndicator = "page-indicator"
     static let settingsButton = "settings-button"
     static let taskPicker = "task-picker"
+    static let glassSurface = "glass-surface"
+    static let spaceEditor = "space-editor"
+    static let liveActivityPreview = "live-activity-preview"
 }
 
 enum LayoutMetrics {
-    static let horizontalMargin: CGFloat = 14
-    static let stackSpacing: CGFloat = 8
-    static let cardCorner: CGFloat = 32
-    static let panelCorner: CGFloat = 28
-    static let buttonDiameter: CGFloat = 66
-    static let stopwatchSize: CGFloat = 76
-    static let upperFraction: CGFloat = 0.46
+    static let horizontalMargin: CGFloat = 20
+    static let stackSpacing: CGFloat = 0
+    static let buttonDiameter: CGFloat = 72
+    static let stopwatchSize: CGFloat = 84
+    static let upperFraction: CGFloat = 0.48
 }

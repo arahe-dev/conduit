@@ -76,7 +76,7 @@ struct PauseSessionIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         try await MainActor.run {
-            try AppRuntime.shared.sessionController?.pause()
+            try AppRuntime.shared.sessionController?.stop()
         }
         return .result()
     }
@@ -87,7 +87,7 @@ struct ResumeSessionIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         try await MainActor.run {
-            try AppRuntime.shared.sessionController?.resume()
+            try AppRuntime.shared.sessionController?.start()
         }
         return .result()
     }

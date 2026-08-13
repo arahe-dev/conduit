@@ -2,76 +2,72 @@
 
 ## Timer state model
 
-`TimerEngine` is a pure state machine with phases:
+Each Space owns a `TimerEngine` / `TimerSnapshot`. At most one Space is `running`.
 
-- `idle` — no session; primary control is Start
-- `running` — session open; Lap and Stop
-- `paused` — session open; elapsed frozen; Start resumes
-- `stopped` — session finished; last elapsed remains visible until a new start
+User-visible phases match Apple Clock:
 
-Transitions are explicit. Start while running is an error. Pause/resume are not overloaded onto unrelated states.
+- `idle` — `00:00.00`; Lap disabled; Start
+- `running` — advancing; Lap; Stop
+- `stopped` — frozen and resumable; Reset; Start
+
+`Stop` freezes elapsed, closes the open task interval, and leaves `Session.endedAt` nil. `Start` from stopped resumes the same session. `Reset` archives one historical session (`endedAt` set), dismisses the Live Activity immediately, and returns the display to idle.
+
+Persisted `"paused"` maps to `stopped`.
 
 ## Timestamp calculation
 
-`TimerSnapshot` stores:
-
-- `accumulatedActiveDuration` for completed running segments
-- `currentSegmentStartedAt` while running
-
-Elapsed time at instant `t` is:
+`TimerSnapshot` stores `accumulatedBeforeCurrentRun` plus `startedAt` while running.
 
 ```
-accumulated + (running ? t - currentSegmentStartedAt : 0)
+idle: 0
+stopped: accumulatedBeforeCurrentRun
+running: accumulated + (now - startedAt)
 ```
 
-The UI refreshes while visible. Truth does not depend on tick count. Backgrounding, locking, and process restoration keep elapsed correct as long as the session timestamps were persisted.
+Truth never depends on frame count.
 
 ## Persistence
 
 SwiftData models:
 
-- `Space` — id, name, tint, order, createdAt, distraction timeout, optional Focus keyword
-- `TaskItem` — id, parent Space, name, order, enabled, createdAt
-- `Session` — id, Space, start, optional end, phase, accumulated duration, active task
-- `TaskInterval` — id, Session, Task, start, optional end
+- `Space` — name, accent, order, reminder seconds (`0` = Off), Focus keyword, default task
+- `TaskItem` — name, order, enabled
+- `Session` — space, start, optional `endedAt` (nil = current/resumable), phase, accumulated, active task
+- `TaskInterval` — session, task, start, optional end
 
-No cloud. Tests use an in-memory `ModelContainer`.
+Open sessions restore per Space. If more than one was stored as running, extras are frozen.
 
-## Task interval bookkeeping
+## Task intervals
 
-Start opens a `TaskInterval` for the first enabled task. Lap ends the open interval and immediately opens the next enabled task, wrapping to the first. Manual selection ends the open interval and opens the chosen task. Stop ends the open interval and the session. There is never more than one open interval.
+Start opens an interval for the selected / default / first enabled task. Direct task tap while running closes the previous interval and opens the new one at the same timestamp. Same-task tap is a no-op. Lap advances to the next enabled task. Deleting the active task moves to the next enabled task or continues with no task.
 
-## Space paging and gesture isolation
+Task-row totals are the current stopwatch session only. They clear on Reset. History keeps archived totals.
 
-A `TabView` with page style lives only in the upper stopwatch region. The lower task panel is a sibling, not a child of the pager, so a horizontal drag that begins on the task list cannot change Space. XCUITest swipes each region by coordinate and asserts Space identity.
+## Space paging
 
-## Live Activity boundary
+A page-style `TabView` lives only in the upper stopwatch region. The task list is a sibling. Swiping a Space does not move elapsed time onto the newly visible Space. Starting Space B while A is running freezes A, then starts or resumes B.
 
-`SessionActivityAttributes` is compiled into the app and the widget extension. The app starts/updates/ends the activity through ActivityKit. The widget renders Lock Screen and Dynamic Island UI. Count-up uses `Text(timerInterval:countsDown: false)` while running so the system can animate time without a one-hertz wake. Interactive controls are App Intents with `openAppWhenRun = true` to avoid App Group entitlements.
+## Live Activity
 
-## App Intent boundary
+`SessionActivityAttributes.ContentState` carries space name, task, running flag, and elapsed. Lock Screen is timer-first with one explicit Stop or Start control. Default activity taps do not mutate the timer (`LiveActivityPresentation.backgroundMutatesTimer == false`). Stop updates the activity as frozen. Reset dismisses with `.immediate`.
 
-Intents call `AppRuntime.shared.sessionController`. Suggested App Shortcuts cover start, stop, next task, and JSON import. Import validates a strict `{name, color, tasks}` schema. Focus is implemented as `SetFocusFilterIntent` (select Space when a user-configured Focus activates). The app does not set system Focus.
+## App Intents
 
-## Notification workaround
+Intents call `AppRuntime.shared.sessionController`. Pause intents freeze like Stop. Resume intents call Start. Focus Filter selects a Space. No backend.
 
-`Distraction Started` schedules a local notification only if a session is running. `Distraction Ended` cancels that identifier. Default threshold is 5 minutes. This is not Screen Time.
+## Notifications
+
+`Distraction Started` schedules a local reminder only if a timer is running and the Space reminder is not Off. Copy is `Work · 42:18` / `Timer is still running.` Actions: Continue, Stop.
 
 ## Test architecture
 
-- Pure tests: `TimerEngine`, `ElapsedFormatter`, `SpaceImportPayload`, `DistractionMonitor`
-- SwiftData tests: `SessionController` with in-memory store and `ControllableTimeSource`
-- UI tests: launch arguments `-UITests`, `-ResetStore`, `-ScreenshotMode`, `-PersistStore`
+- Engine and formatter unit tests
+- Stopwatch semantics (stop / resume / reset)
+- Task interval and editing tests
+- Per-Space ownership tests
+- Live Activity state tests
+- UI tests: paging isolation, labels, long-press Lap, screenshots, Live Activity preview canvas
 
 ## CI architecture
 
-Linux agent never runs Xcode. `.github/workflows/ios-ci.yml` on `macos-26`:
-
-1. Print macOS / Xcode / Swift / simulator summary
-2. Install pinned XcodeGen
-3. Generate the project
-4. Simulator build
-5. Unit + UI tests
-6. Unsigned `generic/platform=iOS` Release build
-7. Zip `Payload/ProductivityTracker.app` as `ProductivityTracker-unsigned.ipa`
-8. Upload artifact `ProductivityTracker-iOS-device-unsigned`
+Linux agent never runs Xcode. `.github/workflows/ios-ci.yml` on `macos-26` generates the Xcode project, tests, packages `ProductivityTracker-unsigned.ipa`, and uploads `ProductivityTracker-iOS-device-unsigned`.

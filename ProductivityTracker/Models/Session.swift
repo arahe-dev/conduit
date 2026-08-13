@@ -38,13 +38,15 @@ final class Session {
     }
 
     var phase: TimerPhase {
-        get { TimerPhase(rawValue: phaseRaw) ?? .idle }
+        get { TimerPhase(persisted: phaseRaw) }
         set { phaseRaw = newValue.rawValue }
     }
 
+    var isArchived: Bool { endedAt != nil }
+
     func elapsed(at now: Date) -> TimeInterval {
         var total = accumulatedActiveDuration
-        if phase == .running, let start = currentSegmentStartedAt {
+        if phase == .running, endedAt == nil, let start = currentSegmentStartedAt {
             total += now.timeIntervalSince(start)
         }
         return max(0, total)

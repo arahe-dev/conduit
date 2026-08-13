@@ -3,13 +3,14 @@ import SwiftUI
 struct PageDots: View {
     var count: Int
     var current: Int
+    var accent: Color = .white
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 7) {
             ForEach(0..<max(count, 0), id: \.self) { index in
                 Circle()
-                    .fill(index == current ? Color.primary.opacity(0.85) : Color.secondary.opacity(0.35))
-                    .frame(width: index == current ? 6.5 : 5.5, height: index == current ? 6.5 : 5.5)
+                    .fill(index == current ? accent.opacity(0.95) : Color.secondary.opacity(0.35))
+                    .frame(width: 6, height: 6)
             }
         }
         .accessibilityElement(children: .ignore)

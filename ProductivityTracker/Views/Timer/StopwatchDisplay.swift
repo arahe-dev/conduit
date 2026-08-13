@@ -1,22 +1,34 @@
 import SwiftUI
 
 struct StopwatchDisplay: View {
-    @Bindable var controller: SessionController
+    var snapshot: TimerSnapshot
+    var overrideElapsed: TimeInterval?
+    var isActivePage: Bool
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.07)) { timeline in
-            let elapsed = controller.displayedElapsed(at: timeline.date)
-            Text(ElapsedFormatter.stopwatch(elapsed))
-                .font(.system(size: LayoutMetrics.stopwatchSize, weight: .thin, design: .default))
-                .monospacedDigit()
-                .foregroundStyle(.primary)
-                .minimumScaleFactor(0.45)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 12)
-                .accessibilityIdentifier(AccessibilityIDs.stopwatch)
-                .accessibilityLabel(ElapsedFormatter.stopwatch(elapsed))
-                .accessibilityValue(controller.snapshot.phase.rawValue)
+        let running = snapshot.isRunning && isActivePage && overrideElapsed == nil
+        Group {
+            if running {
+                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
+                    digits(snapshot.elapsed(at: timeline.date))
+                }
+            } else {
+                digits(overrideElapsed ?? snapshot.elapsed(at: Date()))
+            }
         }
+    }
+
+    private func digits(_ elapsed: TimeInterval) -> some View {
+        Text(ElapsedFormatter.stopwatch(elapsed))
+            .font(.system(size: LayoutMetrics.stopwatchSize, weight: .thin, design: .default))
+            .monospacedDigit()
+            .foregroundStyle(.white)
+            .minimumScaleFactor(0.45)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 8)
+            .accessibilityIdentifier(AccessibilityIDs.stopwatch)
+            .accessibilityLabel(ElapsedFormatter.stopwatch(elapsed))
+            .accessibilityValue(snapshot.phase.rawValue)
     }
 }

@@ -17,6 +17,9 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["timer-card"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["task-panel"].exists)
         XCTAssertTrue(app.buttons["start-stop-button"].exists)
+        XCTAssertTrue(app.buttons["lap-button"].exists)
+        XCTAssertFalse(app.buttons["lap-button"].isEnabled)
+        XCTAssertFalse(app.descendants(matching: .any)[AccessibilityQuery.glass].firstMatch.exists)
     }
 
     func testUpperSwipeChangesSpaceAndLowerSwipeDoesNot() {
@@ -35,29 +38,64 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertEqual(space.label, afterUpper)
     }
 
+    func testStartStopResetLabels() {
+        let startStop = app.buttons["start-stop-button"]
+        XCTAssertEqual(startStop.label, "Start")
+        startStop.tap()
+        XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "running")
+        XCTAssertEqual(startStop.label, "Stop")
+        XCTAssertTrue(app.buttons["lap-button"].isEnabled)
+        startStop.tap()
+        XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "stopped")
+        XCTAssertEqual(startStop.label, "Start")
+        XCTAssertTrue(app.buttons["reset-button"].waitForExistence(timeout: 2))
+        XCTAssertEqual(app.buttons["reset-button"].label, "Reset")
+    }
+
     func testStartElapsedLapStop() {
         app.buttons["start-stop-button"].tap()
         XCTAssertTrue(app.staticTexts["stopwatch-display"].waitForExistence(timeout: 2))
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "running")
         app.buttons["lap-button"].tap()
-        XCTAssertTrue(app.staticTexts["task-row-Research"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["task-row-Research"].firstMatch.exists)
         app.buttons["start-stop-button"].tap()
         XCTAssertEqual(app.staticTexts["stopwatch-display"].value as? String, "stopped")
     }
 
-    func testLongPressLapPresentsTaskPicker() {
+    func testTaskTapSelectsTask() {
         app.buttons["start-stop-button"].tap()
-        let lap = app.buttons["lap-button"]
-        lap.press(forDuration: 0.8)
-        XCTAssertTrue(app.otherElements["task-picker"].waitForExistence(timeout: 3) || app.buttons["task-choice-Email"].waitForExistence(timeout: 3))
-        if app.buttons["task-choice-Email"].exists {
-            app.buttons["task-choice-Email"].tap()
-        }
+        let email = app.descendants(matching: .any)["task-row-Email"].firstMatch
+        XCTAssertTrue(email.waitForExistence(timeout: 2))
+        email.tap()
+        XCTAssertTrue(email.isSelected)
     }
 
-    func testSettingsAndHistoryNavigation() {
+    func testLongPressLapPresentsTaskPickerWithoutLapping() {
+        app.buttons["start-stop-button"].tap()
+        let deep = app.descendants(matching: .any)["task-row-Deep Work"].firstMatch
+        XCTAssertTrue(deep.waitForExistence(timeout: 2))
+        app.buttons["lap-button"].press(forDuration: 0.85)
+        let picker = app.otherElements["task-picker"].firstMatch
+        let emailChoice = app.buttons["task-choice-Email"].firstMatch
+        XCTAssertTrue(picker.waitForExistence(timeout: 3) || emailChoice.waitForExistence(timeout: 3))
+        XCTAssertFalse(app.descendants(matching: .any)["task-row-Research"].firstMatch.isSelected)
+        if app.buttons["Close"].exists {
+            app.buttons["Close"].tap()
+        } else {
+            app.swipeDown()
+        }
+        XCTAssertTrue(deep.isSelected || !app.descendants(matching: .any)["task-row-Research"].firstMatch.isSelected)
+    }
+
+    func testSettingsHistoryAndSpaceEditor() {
         app.buttons["settings-button"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 3) || app.otherElements["settings-screen"].waitForExistence(timeout: 3))
+        app.buttons["Manage Spaces"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["space-row-Work"].firstMatch.waitForExistence(timeout: 3))
+        app.descendants(matching: .any)["space-row-Work"].firstMatch.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["space-editor"].firstMatch.waitForExistence(timeout: 3))
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Session History"].tap()
         XCTAssertTrue(app.navigationBars["History"].waitForExistence(timeout: 3) || app.otherElements["history-screen"].waitForExistence(timeout: 3))
     }
@@ -93,33 +131,67 @@ final class ProductivityTrackerUITests: XCTestCase {
     }
 }
 
+private enum AccessibilityQuery {
+    static let glass = "glass-surface"
+}
+
 final class ScreenshotUITests: XCTestCase {
     func testCaptureDeterministicScreens() throws {
-        let app = XCUIApplication()
-        app.launchArguments = ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode"]
-        app.launchEnvironment["UITEST_ELAPSED"] = "31.42"
-        app.launch()
-        XCTAssertTrue(app.descendants(matching: .any)["space-name"].firstMatch.waitForExistence(timeout: 5))
-
         let screenshotDir = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"] ?? NSTemporaryDirectory()
         try FileManager.default.createDirectory(atPath: screenshotDir, withIntermediateDirectories: true)
 
-        save(app.screenshot(), name: "01-timer-running", directory: screenshotDir)
+        capture(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "idle"], name: "01-timer-idle", directory: screenshotDir)
+        capture(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "running"], environment: ["UITEST_ELAPSED": "31.42"], name: "02-timer-running", directory: screenshotDir)
 
-        app.buttons["lap-button"].press(forDuration: 0.8)
+        let running = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "running"], environment: ["UITEST_ELAPSED": "31.42"])
+        running.buttons["start-stop-button"].tap()
+        save(running.screenshot(), name: "03-timer-stopped", directory: screenshotDir)
+        running.terminate()
+
+        let pickerApp = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "running"], environment: ["UITEST_ELAPSED": "31.42"])
+        pickerApp.buttons["lap-button"].press(forDuration: 0.8)
         sleep(1)
-        save(XCUIScreen.main.screenshot(), name: "02-task-picker", directory: screenshotDir)
-        if app.buttons["Close"].exists {
-            app.buttons["Close"].tap()
-        } else {
-            app.swipeDown()
-        }
+        save(XCUIScreen.main.screenshot(), name: "04-task-picker", directory: screenshotDir)
+        pickerApp.terminate()
 
-        app.buttons["settings-button"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 3) || app.otherElements["settings-screen"].waitForExistence(timeout: 3))
-        save(XCUIScreen.main.screenshot(), name: "03-settings", directory: screenshotDir)
-        app.buttons["Session History"].tap()
-        save(XCUIScreen.main.screenshot(), name: "04-history", directory: screenshotDir)
+        let settingsApp = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "idle"])
+        settingsApp.buttons["settings-button"].tap()
+        XCTAssertTrue(settingsApp.navigationBars["Settings"].waitForExistence(timeout: 3) || settingsApp.otherElements["settings-screen"].waitForExistence(timeout: 3))
+        save(XCUIScreen.main.screenshot(), name: "05-settings", directory: screenshotDir)
+        settingsApp.buttons["Manage Spaces"].tap()
+        settingsApp.descendants(matching: .any)["space-row-Work"].firstMatch.tap()
+        XCTAssertTrue(settingsApp.descendants(matching: .any)["space-editor"].firstMatch.waitForExistence(timeout: 3))
+        save(XCUIScreen.main.screenshot(), name: "06-space-editor", directory: screenshotDir)
+        if settingsApp.buttons["Edit"].exists {
+            settingsApp.buttons["Edit"].tap()
+            save(XCUIScreen.main.screenshot(), name: "07-task-reorder", directory: screenshotDir)
+        }
+        settingsApp.navigationBars.buttons.firstMatch.tap()
+        settingsApp.navigationBars.buttons.firstMatch.tap()
+        settingsApp.buttons["Session History"].tap()
+        save(XCUIScreen.main.screenshot(), name: "08-history", directory: screenshotDir)
+        settingsApp.terminate()
+
+        let live = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-LiveActivityPreview"])
+        XCTAssertTrue(live.descendants(matching: .any)["live-activity-preview"].firstMatch.waitForExistence(timeout: 5))
+        save(live.screenshot(), name: "09-live-activity-previews", directory: screenshotDir)
+        live.terminate()
+    }
+
+    private func launch(arguments: [String], environment: [String: String] = [:]) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = arguments
+        app.launchEnvironment = environment
+        app.launch()
+        _ = app.descendants(matching: .any)["space-name"].firstMatch.waitForExistence(timeout: 5)
+            || app.descendants(matching: .any)["live-activity-preview"].firstMatch.waitForExistence(timeout: 5)
+        return app
+    }
+
+    private func capture(arguments: [String], environment: [String: String] = [:], name: String, directory: String) {
+        let app = launch(arguments: arguments, environment: environment)
+        save(app.screenshot(), name: name, directory: directory)
+        app.terminate()
     }
 
     private func save(_ screenshot: XCUIScreenshot, name: String, directory: String) {

@@ -17,6 +17,7 @@ struct SettingsView: View {
                     NavigationLink("Manage Spaces") {
                         SpaceListView(controller: controller)
                     }
+                    .accessibilityIdentifier("manage-spaces")
                 }
                 Section("History") {
                     NavigationLink("Session History") {
@@ -34,7 +35,7 @@ struct SettingsView: View {
                     .onChange(of: timeout) { _, newValue in
                         controller.settings.distractionTimeoutSeconds = newValue
                     }
-                    Text("Used by the Shortcuts Distraction Started intent. This is not Screen Time measurement.")
+                    Text("Per-Space reminder in each Space. This global value is the default for new Spaces. This is not Screen Time.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

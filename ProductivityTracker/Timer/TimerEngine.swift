@@ -1,88 +1,69 @@
 import Foundation
 
-enum TimerEngineError: Error, Equatable {
-    case invalidTransition(from: TimerPhase, to: String)
-}
+/// Timestamp-based stopwatch. Stop freezes; Start resumes; Reset returns to idle.
+@MainActor
+final class TimerEngine {
+    private(set) var snapshot: TimerSnapshot
 
-struct TimerEngine: Equatable, Sendable {
-    var snapshot: TimerSnapshot
+    init(spaceID: UUID = UUID(), currentTaskID: UUID? = nil) {
+        self.snapshot = .idle(spaceID: spaceID, currentTaskID: currentTaskID)
+    }
 
-    init(snapshot: TimerSnapshot = .idle) {
+    init(snapshot: TimerSnapshot) {
         self.snapshot = snapshot
     }
 
-    mutating func start(now: Date, sessionID: UUID, spaceID: UUID, taskID: UUID?) throws {
+    func restore(_ snapshot: TimerSnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func bindSpace(_ spaceID: UUID) {
+        snapshot.spaceID = spaceID
+    }
+
+    func selectTask(_ taskID: UUID?) {
+        snapshot.currentTaskID = taskID
+    }
+
+    func start(now: Date, sessionID: UUID) {
         switch snapshot.phase {
-        case .idle, .stopped:
-            snapshot = TimerSnapshot(
-                phase: .running,
-                sessionID: sessionID,
-                spaceID: spaceID,
-                activeTaskID: taskID,
-                sessionStartedAt: now,
-                accumulatedActiveDuration: 0,
-                currentSegmentStartedAt: now,
-                lastStoppedElapsed: 0
-            )
-        case .paused:
+        case .idle:
+            snapshot.sessionID = sessionID
+            snapshot.startedAt = now
+            snapshot.accumulatedBeforeCurrentRun = 0
             snapshot.phase = .running
-            snapshot.currentSegmentStartedAt = now
+            snapshot.lastTick = now
+        case .stopped:
+            snapshot.startedAt = now
+            snapshot.phase = .running
+            snapshot.lastTick = now
         case .running:
-            throw TimerEngineError.invalidTransition(from: .running, to: "start")
+            break
         }
     }
 
-    mutating func pause(now: Date) throws {
-        guard snapshot.phase == .running else {
-            throw TimerEngineError.invalidTransition(from: snapshot.phase, to: "pause")
-        }
-        if let start = snapshot.currentSegmentStartedAt {
-            snapshot.accumulatedActiveDuration += now.timeIntervalSince(start)
-        }
-        snapshot.currentSegmentStartedAt = nil
-        snapshot.phase = .paused
-    }
-
-    mutating func resume(now: Date) throws {
-        guard snapshot.phase == .paused else {
-            throw TimerEngineError.invalidTransition(from: snapshot.phase, to: "resume")
-        }
-        snapshot.phase = .running
-        snapshot.currentSegmentStartedAt = now
-    }
-
-    mutating func stop(now: Date) throws {
-        guard snapshot.phase == .running || snapshot.phase == .paused else {
-            throw TimerEngineError.invalidTransition(from: snapshot.phase, to: "stop")
-        }
-        let elapsed = snapshot.elapsed(at: now)
+    func stop(now: Date) {
+        guard snapshot.phase == .running else { return }
+        snapshot.accumulatedBeforeCurrentRun = snapshot.elapsed(at: now)
+        snapshot.startedAt = nil
         snapshot.phase = .stopped
-        snapshot.accumulatedActiveDuration = elapsed
-        snapshot.currentSegmentStartedAt = nil
-        snapshot.lastStoppedElapsed = elapsed
+        snapshot.lastTick = now
     }
 
-    mutating func reset() {
-        snapshot = .idle
+    func resetDisplay() {
+        snapshot.phase = .idle
+        snapshot.sessionID = nil
+        snapshot.startedAt = nil
+        snapshot.accumulatedBeforeCurrentRun = 0
+        snapshot.liveActivityID = nil
+        snapshot.lastTick = Date(timeIntervalSince1970: 0)
     }
 
-    mutating func lap(now: Date, nextTaskID: UUID) throws {
-        guard snapshot.phase == .running else {
-            throw TimerEngineError.invalidTransition(from: snapshot.phase, to: "lap")
-        }
-        snapshot.activeTaskID = nextTaskID
-        _ = now
+    func attachLiveActivity(_ id: String) {
+        snapshot.liveActivityID = id
     }
 
-    mutating func selectTask(now: Date, taskID: UUID) throws {
-        guard snapshot.phase == .running || snapshot.phase == .paused else {
-            throw TimerEngineError.invalidTransition(from: snapshot.phase, to: "selectTask")
-        }
-        snapshot.activeTaskID = taskID
-        _ = now
-    }
-
-    mutating func restore(_ snapshot: TimerSnapshot) {
-        self.snapshot = snapshot
+    func detachLiveActivity() {
+        snapshot.liveActivityID = nil
     }
 }

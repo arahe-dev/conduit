@@ -6,17 +6,9 @@ struct ProductivityTrackerLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SessionActivityAttributes.self) { context in
             LiveActivityView(context: context)
-                .activityBackgroundTint(Color.black.opacity(0.35))
-                .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: "timer")
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    EmptyView()
-                }
-                DynamicIslandExpandedRegion(.bottom) {
+                DynamicIslandExpandedRegion(.center) {
                     DynamicIslandViews.expanded(context: context)
                 }
             } compactLeading: {

@@ -9,14 +9,16 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if let controller {
+            if launch.liveActivityPreview {
+                LiveActivityPreviewScreen()
+            } else if let controller {
                 TimerScreen(controller: controller, showSettings: $showSettings)
             } else {
                 Color.black.ignoresSafeArea()
             }
         }
         .onAppear {
-            if controller == nil {
+            if controller == nil && !launch.liveActivityPreview {
                 let created = SessionController(context: modelContext, launch: launch)
                 try? created.bootstrap()
                 controller = created

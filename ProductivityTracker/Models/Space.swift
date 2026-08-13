@@ -10,6 +10,7 @@ final class Space {
     var createdAt: Date
     var distractionTimeoutSeconds: Double
     var focusKeyword: String?
+    var defaultTaskID: UUID?
 
     @Relationship(deleteRule: .cascade, inverse: \TaskItem.space)
     var tasks: [TaskItem]
@@ -25,6 +26,7 @@ final class Space {
         createdAt: Date = Date(),
         distractionTimeoutSeconds: Double = 300,
         focusKeyword: String? = nil,
+        defaultTaskID: UUID? = nil,
         tasks: [TaskItem] = [],
         sessions: [Session] = []
     ) {
@@ -35,6 +37,7 @@ final class Space {
         self.createdAt = createdAt
         self.distractionTimeoutSeconds = distractionTimeoutSeconds
         self.focusKeyword = focusKeyword
+        self.defaultTaskID = defaultTaskID
         self.tasks = tasks
         self.sessions = sessions
     }
@@ -43,6 +46,8 @@ final class Space {
         get { SpaceTint(rawValue: tintRaw) ?? .orange }
         set { tintRaw = newValue.rawValue }
     }
+
+    var remindersEnabled: Bool { distractionTimeoutSeconds > 0 }
 
     var enabledTasksSorted: [TaskItem] {
         tasks.filter(\.isEnabled).sorted { $0.displayOrder < $1.displayOrder }

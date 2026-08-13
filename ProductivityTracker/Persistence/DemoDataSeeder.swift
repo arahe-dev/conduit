@@ -35,6 +35,7 @@ enum DemoDataSeeder {
             TaskItem(id: DemoIDs.research, name: "Research", displayOrder: 1, space: work),
             TaskItem(id: DemoIDs.email, name: "Email", displayOrder: 2, space: work)
         ]
+        work.defaultTaskID = DemoIDs.deepWork
 
         let chores = Space(
             id: DemoIDs.chores,

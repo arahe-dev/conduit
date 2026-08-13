@@ -34,7 +34,7 @@ struct HistoryView: View {
         .navigationTitle("History")
         .accessibilityIdentifier("history-screen")
         .onAppear {
-            sessions = (try? controller.allSessions()) ?? []
+            sessions = (try? controller.historicalSessions()) ?? []
         }
     }
 

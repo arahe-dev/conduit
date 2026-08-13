@@ -13,8 +13,9 @@ struct TaskPickerSheet: View {
                 } label: {
                     HStack {
                         Text(task.name)
+                            .foregroundStyle(.primary)
                         Spacer()
-                        if task.id == controller.snapshot.activeTaskID {
+                        if task.id == controller.snapshot.currentTaskID {
                             Image(systemName: "checkmark")
                                 .foregroundStyle(.secondary)
                         }
@@ -22,7 +23,7 @@ struct TaskPickerSheet: View {
                 }
                 .accessibilityIdentifier("task-choice-\(task.name)")
             }
-            .navigationTitle("Choose Task")
+            .navigationTitle("Tasks")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

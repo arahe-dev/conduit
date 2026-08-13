@@ -7,6 +7,7 @@ struct GlassSurface<Content: View>: View {
 
     var body: some View {
         content
+            .accessibilityIdentifier(AccessibilityIDs.glassSurface)
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(.black.opacity(0.18))

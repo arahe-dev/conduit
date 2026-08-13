@@ -9,9 +9,17 @@ struct SpaceListView: View {
     var body: some View {
         List {
             ForEach(controller.spaces, id: \.id) { space in
-                NavigationLink(space.name) {
+                NavigationLink {
                     SpaceEditorView(controller: controller, space: space)
+                } label: {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(space.tint.color)
+                            .frame(width: 10, height: 10)
+                        Text(space.name)
+                    }
                 }
+                .accessibilityIdentifier("space-row-\(space.name)")
             }
             .onMove { source, destination in
                 try? controller.moveSpaces(from: source, to: destination)
@@ -22,18 +30,20 @@ struct SpaceListView: View {
                     confirmHistory = true
                 }
             }
-            Section("New Space") {
+            Section {
                 TextField("Name", text: $newName)
-                Button("Create") {
+                Button("Add") {
                     let name = newName.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !name.isEmpty else { return }
-                    _ = try? controller.createSpace(name: name, tint: .blue, tasks: ["Task 1"])
+                    _ = try? controller.createSpace(name: name, tint: .blue, tasks: ["Task"])
                     newName = ""
                 }
+            } header: {
+                Text("New Space")
             }
         }
         .navigationTitle("Spaces")
-        .environment(\.editMode, .constant(.active))
+        .toolbar { EditButton() }
         .alert("Delete Space?", isPresented: $confirmHistory) {
             Button("Cancel", role: .cancel) { pendingDelete = nil }
             Button("Delete", role: .destructive) {
@@ -43,7 +53,7 @@ struct SpaceListView: View {
                 pendingDelete = nil
             }
         } message: {
-            Text("This Space may contain session history. Deleting it removes that history from this device.")
+            Text("Session history for this Space will be removed.")
         }
     }
 }

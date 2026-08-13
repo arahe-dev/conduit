@@ -77,8 +77,8 @@ A free Apple Account can sign the IPA locally (Sideloadly). Apps expire after 7 
 
 ## Testing
 
-- Unit tests cover the timer state machine, task intervals, Spaces, persistence, distraction notifications, and JSON import.
-- UI tests cover launch, Start/Lap/Stop, upper-only Space paging, long-press task picker, settings/history, and a deterministic screenshot mode (`-ScreenshotMode`, frozen `00:31.42`).
+- Unit tests cover Apple Stopwatch semantics, per-Space ownership, task editing, Live Activity state, persistence, notifications, and JSON import.
+- UI tests cover Start/Stop/Reset labels, upper-only Space paging, long-press Lap without advancing, Space editor, and screenshot/Live Activity preview canvases (`-ScreenshotMode`, `-TimerState`, `-LiveActivityPreview`).
 
 ## Screenshots
 
@@ -86,7 +86,7 @@ CI writes PNGs under `artifacts/screenshots` when `SCREENSHOT_DIR` is set. After
 
 ## Known limitations
 
-- Live Activity interactive buttons use App Intents with `openAppWhenRun = true` so they work without an App Group (App Groups are not assumed for free personal signing). iOS may briefly activate the app.
+- Live Activity explicit Stop/Start controls use Live Activity intents with `openAppWhenRun = false`. A normal tap on the activity surface is intended only to open the app; it must not pause or resume. Physical Lock Screen routing still needs a real iPhone.
 - Distraction detection is a Shortcuts approximation (`Distraction Started` / `Distraction Ended`), not Screen Time / FamilyControls.
 - The app cannot force system Focus on. A Focus Filter can select a Space when a Focus you configured becomes active.
 - Unsigned CI artifacts cannot be installed until you sign them with your Apple Account on your computer.

@@ -7,41 +7,53 @@ struct StopwatchCard: View {
     var onLongPressLap: () -> Void
 
     var body: some View {
-        GlassSurface(tint: space.tint.color, cornerRadius: LayoutMetrics.cardCorner) {
-            VStack(spacing: 0) {
-                HStack {
-                    Text(space.name)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier(showsControls ? "space-name-card" : "space-name-idle")
-                        .accessibilityLabel(space.name)
-                    Spacer()
-                }
-                .padding(.horizontal, 22)
-                .padding(.top, 18)
-
-                Spacer(minLength: 8)
-
-                StopwatchDisplay(controller: controller)
-                    .frame(maxWidth: .infinity)
-
-                Spacer(minLength: 8)
-
-                if showsControls {
-                    StopwatchButtons(controller: controller, onLongPressLap: onLongPressLap)
-                        .padding(.bottom, 10)
-                } else {
-                    Color.clear.frame(height: LayoutMetrics.buttonDiameter + 10)
-                }
-
-                PageDots(count: controller.spaces.count, current: currentIndex)
-                    .accessibilityIdentifier(AccessibilityIDs.pageIndicator)
-                    .padding(.bottom, 16)
+        let snap = controller.snapshot(for: space.id)
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(space.tint.color)
+                    .frame(width: 7, height: 7)
+                    .accessibilityHidden(true)
+                Text(space.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(showsControls ? "space-name-card" : "space-name-idle")
+                    .accessibilityLabel(space.name)
+                Spacer()
             }
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+
+            Spacer(minLength: 4)
+
+            StopwatchDisplay(
+                snapshot: snap,
+                overrideElapsed: controller.displayOverrideElapsed(for: space.id),
+                isActivePage: showsControls
+            )
+
+            Spacer(minLength: 18)
+
+            if showsControls {
+                StopwatchButtons(controller: controller, onLongPressLap: onLongPressLap)
+            } else {
+                Color.clear.frame(height: LayoutMetrics.buttonDiameter)
+            }
+
+            PageDots(
+                count: controller.spaces.count,
+                current: currentIndex,
+                accent: space.tint.color
+            )
+            .accessibilityIdentifier(AccessibilityIDs.pageIndicator)
+            .padding(.top, 18)
+            .padding(.bottom, 8)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .contentShape(Rectangle())
     }
 
     private var currentIndex: Int {
-        controller.spaces.firstIndex(where: { $0.id == space.id }) ?? 0
+        controller.spaces.firstIndex(where: { $0.id == controller.selectedSpaceID }) ?? 0
     }
 }
