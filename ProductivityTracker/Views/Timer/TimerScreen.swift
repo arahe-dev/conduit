@@ -3,7 +3,10 @@ import SwiftUI
 struct TimerScreen: View {
     @Bindable var controller: SessionController
     @Binding var showSettings: Bool
-    @State private var page: SpacePagerPage? = .space(DemoIDs.work)
+    @State private var spaceID: UUID? = DemoIDs.work
+    @State private var composeOpen = false
+    @State private var peekRaw: CGFloat = 0
+    @State private var dismissDrag: CGFloat = 0
     @State private var showTaskPicker = false
     @State private var showSavedTimes = false
     @State private var renamingTask: TaskItem?
@@ -12,9 +15,10 @@ struct TimerScreen: View {
 
     var body: some View {
         GeometryReader { geo in
+            let pageWidth = geo.size.width
             ZStack(alignment: .topTrailing) {
-                canvasWash.ignoresSafeArea()
-                pager(width: geo.size.width, height: geo.size.height)
+                Color.black.ignoresSafeArea()
+                pager(width: pageWidth, height: geo.size.height)
                     .ignoresSafeArea(edges: .bottom)
 
                 Button {
@@ -28,18 +32,17 @@ struct TimerScreen: View {
                 .accessibilityIdentifier(AccessibilityIDs.settingsButton)
                 .accessibilityLabel("Settings")
                 .padding(.trailing, 4)
+                .zIndex(2)
             }
         }
-        .background(canvasWash.ignoresSafeArea())
+        .background(Color.black.ignoresSafeArea())
         .onAppear {
-            if let selected = controller.selectedSpaceID {
-                page = .space(selected)
-            }
+            spaceID = controller.selectedSpaceID ?? controller.spaces.first?.id ?? DemoIDs.work
         }
-        .onChange(of: page) { _, newValue in
+        .onChange(of: spaceID) { _, newValue in
             Keyboard.dismiss()
-            if case .space(let id) = newValue, id != controller.selectedSpaceID {
-                controller.selectSpace(id, haptic: true)
+            if !composeOpen, let newValue, newValue != controller.selectedSpaceID {
+                controller.selectSpace(newValue, haptic: true)
             }
         }
         .sheet(isPresented: $showTaskPicker) {
@@ -86,86 +89,149 @@ struct TimerScreen: View {
     }
 
     private var historySpaceID: UUID? {
-        if case .space(let id) = page { return id }
-        return controller.selectedSpaceID
-    }
-
-    private var canvasWash: Color {
-        switch page {
-        case .space(let id):
-            return controller.spaces.first(where: { $0.id == id })?.tint.color.opacity(0.38) ?? .black
-        case .compose:
-            return SpaceTint.blue.color.opacity(0.32)
-        case .none:
-            return controller.selectedSpace?.tint.color.opacity(0.38) ?? .black
-        }
+        composeOpen ? controller.selectedSpaceID : spaceID
     }
 
     private var pageCount: Int { controller.spaces.count + 1 }
 
-    private func isActive(_ id: UUID) -> Bool {
-        page == .space(id)
+    private var isOnLastSpace: Bool {
+        !composeOpen && spaceID == controller.spaces.last?.id
     }
 
-    private func pageIndex(for value: SpacePagerPage) -> Int {
-        switch value {
-        case .space(let id):
-            return controller.spaces.firstIndex(where: { $0.id == id }) ?? 0
-        case .compose:
-            return controller.spaces.count
-        }
+    private func pageIndex(for id: UUID) -> Int {
+        controller.spaces.firstIndex(where: { $0.id == id }) ?? 0
     }
 
     @ViewBuilder
     private func pager(width: CGFloat, height: CGFloat) -> some View {
-        let lastSpaceIndex = max(controller.spaces.count - 1, 0)
-        let commit = controller.launch.uiTesting ? 0.18 : 0.58
-        ScrollView(.horizontal) {
-            HStack(spacing: 0) {
-                ForEach(controller.spaces, id: \.id) { space in
-                    SpacePage(
-                        controller: controller,
-                        space: space,
-                        isActivePage: isActive(space.id),
-                        pageIndex: pageIndex(for: .space(space.id)),
-                        pageCount: pageCount,
-                        onLongPressLap: { showTaskPicker = true },
-                        onRenameTask: { task in
-                            renamingTask = task
-                            renameText = task.name
-                        },
-                        onEditSpace: { editingSpace = space },
-                        onSaveTime: { try? controller.saveTime(in: space) },
-                        onOpenSavedTimes: { showSavedTimes = true }
-                    )
-                    .frame(width: width, height: height)
-                    .id(SpacePagerPage.space(space.id))
+        let reveal = composeReveal(pageWidth: width)
+        ZStack(alignment: .topLeading) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 0) {
+                    ForEach(controller.spaces, id: \.id) { space in
+                        SpacePage(
+                            controller: controller,
+                            space: space,
+                            isActivePage: space.id == spaceID && !composeOpen,
+                            pageIndex: pageIndex(for: space.id),
+                            pageCount: pageCount,
+                            onLongPressLap: { showTaskPicker = true },
+                            onRenameTask: { task in
+                                renamingTask = task
+                                renameText = task.name
+                            },
+                            onEditSpace: { editingSpace = space },
+                            onSaveTime: { try? controller.saveTime(in: space) },
+                            onOpenSavedTimes: { showSavedTimes = true }
+                        )
+                        .frame(width: width, height: height)
+                        .id(space.id)
+                    }
                 }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $spaceID)
+            .scrollDismissesKeyboard(.immediately)
+            .background(
+                ComposePullCatcher(
+                    onLastSpace: isOnLastSpace,
+                    composeOpen: composeOpen,
+                    pageWidth: width,
+                    onPeekChanged: { peekRaw = $0 },
+                    onPeekEnded: { translation, predicted in
+                        finishPeek(translation: translation, predicted: predicted, pageWidth: width)
+                    }
+                )
+            )
+
+            if reveal > 0.5 {
                 SpaceComposePage(
                     controller: controller,
                     pageIndex: max(pageCount - 1, 0),
                     pageCount: pageCount,
-                    isActive: page == .compose,
+                    isActive: composeOpen,
                     onCreated: { space in
+                        closeCompose(animated: false)
                         controller.selectSpace(space.id, haptic: true)
-                        page = .space(space.id)
+                        spaceID = space.id
                     }
                 )
                 .frame(width: width, height: height)
-                .id(SpacePagerPage.compose)
+                .offset(x: width - reveal)
+                .allowsHitTesting(composeOpen)
+                .gesture(composeDismissGesture(pageWidth: width))
             }
-            .scrollTargetLayout()
         }
-        .scrollIndicators(.hidden)
-        .scrollTargetBehavior(
-            ComposeIntentPaging(
-                pageWidth: width,
-                lastSpaceIndex: lastSpaceIndex,
-                commitFraction: commit
-            )
-        )
-        .scrollPosition(id: $page)
-        .scrollDismissesKeyboard(.immediately)
+        .frame(width: width, height: height)
+        .clipped()
         .accessibilityIdentifier(AccessibilityIDs.spacePager)
+    }
+
+    private func composeReveal(pageWidth: CGFloat) -> CGFloat {
+        if composeOpen {
+            return max(0, pageWidth - dismissDrag)
+        }
+        return ComposePull.resist(peekRaw, pageWidth: pageWidth)
+    }
+
+    private func finishPeek(translation: CGFloat, predicted: CGFloat, pageWidth: CGFloat) {
+        if ComposePull.shouldCommit(
+            translation: translation,
+            predicted: predicted,
+            pageWidth: pageWidth,
+            relaxed: controller.launch.uiTesting
+        ) {
+            Keyboard.dismiss()
+            withAnimation(.interactiveSpring(response: 0.34, dampingFraction: 0.9)) {
+                composeOpen = true
+                peekRaw = 0
+                dismissDrag = 0
+            }
+        } else {
+            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.86)) {
+                peekRaw = 0
+            }
+        }
+    }
+
+    private func composeDismissGesture(pageWidth: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                dismissDrag = max(0, value.translation.width)
+            }
+            .onEnded { value in
+                let predicted = max(0, value.predictedEndTranslation.width)
+                finishDismiss(translation: max(0, value.translation.width), predicted: predicted, pageWidth: pageWidth)
+            }
+    }
+
+    private func finishDismiss(translation: CGFloat, predicted: CGFloat, pageWidth: CGFloat) {
+        if ComposePull.shouldDismiss(translation: translation, predicted: predicted, pageWidth: pageWidth) {
+            Keyboard.dismiss()
+            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.92)) {
+                composeOpen = false
+                peekRaw = 0
+                dismissDrag = 0
+            }
+        } else {
+            withAnimation(.interactiveSpring(response: 0.24, dampingFraction: 0.9)) {
+                dismissDrag = 0
+            }
+        }
+    }
+
+    private func closeCompose(animated: Bool) {
+        let apply = {
+            composeOpen = false
+            peekRaw = 0
+            dismissDrag = 0
+        }
+        if animated {
+            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.94), apply)
+        } else {
+            apply()
+        }
     }
 }

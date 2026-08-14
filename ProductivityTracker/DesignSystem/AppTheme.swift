@@ -28,3 +28,21 @@ enum LayoutMetrics {
     static let stopwatchSize: CGFloat = 84
     static let upperFraction: CGFloat = 0.48
 }
+
+enum SpaceCanvas {
+    static func glow(_ color: Color) -> some View {
+        ZStack {
+            Color.black
+            LinearGradient(
+                stops: [
+                    .init(color: color.opacity(0.20), location: 0),
+                    .init(color: color.opacity(0.06), location: 0.14),
+                    .init(color: Color.clear, location: 0.32)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+        .ignoresSafeArea()
+    }
+}

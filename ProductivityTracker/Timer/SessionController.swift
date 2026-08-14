@@ -118,9 +118,6 @@ final class SessionController {
         if haptic {
             Haptics.spaceChange()
         }
-        if runningSpaceID != nil || snapshots.values.contains(where: { $0.phase == .stopped }) {
-            liveActivity.startOrUpdate(from: self, at: timeSource.now())
-        }
         noteChange()
     }
 
@@ -156,7 +153,7 @@ final class SessionController {
         try start(in: space)
     }
 
-    func start(in space: Space, publishLiveActivity: Bool = true) throws {
+    func start(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true) throws {
         if selectedSpaceID != space.id {
             selectSpace(space.id)
         }
@@ -178,7 +175,9 @@ final class SessionController {
         if publishLiveActivity {
             liveActivity.startOrUpdate(from: self, at: now)
         }
-        try context.save()
+        if persist {
+            try context.save()
+        }
         noteChange()
     }
 
@@ -187,13 +186,15 @@ final class SessionController {
         try stop(in: space)
     }
 
-    func stop(in space: Space, publishLiveActivity: Bool = true) throws {
+    func stop(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true) throws {
         let now = timeSource.now()
         try freezeSpace(space.id, at: now, haptic: true)
         if publishLiveActivity {
             liveActivity.startOrUpdate(from: self, at: now)
         }
-        try context.save()
+        if persist {
+            try context.save()
+        }
         noteChange()
     }
 
@@ -210,7 +211,7 @@ final class SessionController {
         try reset(in: space)
     }
 
-    func reset(in space: Space, publishLiveActivity: Bool = true) throws {
+    func reset(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true) throws {
         if selectedSpaceID != space.id {
             selectSpace(space.id)
         }
@@ -239,7 +240,9 @@ final class SessionController {
         if publishLiveActivity {
             liveActivity.dismissImmediate()
         }
-        try context.save()
+        if persist {
+            try context.save()
+        }
         noteChange()
     }
 
@@ -571,20 +574,23 @@ final class SessionController {
 
     func startFromLiveActivity() async {
         guard let space = liveActivitySpace() else { return }
-        try? start(in: space, publishLiveActivity: false)
+        try? start(in: space, publishLiveActivity: false, persist: false)
         await liveActivity.startOrUpdateAndWait(from: self, at: timeSource.now())
+        try? context.save()
     }
 
     func stopFromLiveActivity() async {
         guard let space = liveActivitySpace() else { return }
-        try? stop(in: space, publishLiveActivity: false)
+        try? stop(in: space, publishLiveActivity: false, persist: false)
         await liveActivity.startOrUpdateAndWait(from: self, at: timeSource.now())
+        try? context.save()
     }
 
     func resetFromLiveActivity() async {
         guard let space = liveActivitySpace() else { return }
-        try? reset(in: space, publishLiveActivity: false)
+        try? reset(in: space, publishLiveActivity: false, persist: false)
         await liveActivity.dismissAndWait()
+        try? context.save()
     }
 
     func lapFromLiveActivity() throws {

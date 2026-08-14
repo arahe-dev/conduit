@@ -21,21 +21,21 @@ enum SpaceTint: String, Codable, CaseIterable, Sendable, Identifiable {
 
     var color: Color {
         switch self {
-        case .orange: Color(red: 1.00, green: 0.55, blue: 0.10)
-        case .blue: Color(red: 0.22, green: 0.56, blue: 1.00)
-        case .teal: Color(red: 0.18, green: 0.82, blue: 0.78)
-        case .purple: Color(red: 0.72, green: 0.42, blue: 1.00)
-        case .green: Color(red: 0.34, green: 0.86, blue: 0.44)
-        case .red: Color(red: 1.00, green: 0.35, blue: 0.32)
-        case .yellow: Color(red: 1.00, green: 0.80, blue: 0.16)
-        case .indigo: Color(red: 0.42, green: 0.45, blue: 0.98)
-        case .pink: Color(red: 1.00, green: 0.40, blue: 0.64)
-        case .gray: Color(red: 0.72, green: 0.74, blue: 0.78)
+        case .orange: Color(red: 1.00, green: 0.62, blue: 0.18)
+        case .blue: Color(red: 0.36, green: 0.62, blue: 1.00)
+        case .teal: Color(red: 0.32, green: 0.86, blue: 0.78)
+        case .purple: Color(red: 0.76, green: 0.52, blue: 1.00)
+        case .green: Color(red: 0.42, green: 0.86, blue: 0.50)
+        case .red: Color(red: 1.00, green: 0.42, blue: 0.40)
+        case .yellow: Color(red: 1.00, green: 0.84, blue: 0.28)
+        case .indigo: Color(red: 0.54, green: 0.56, blue: 1.00)
+        case .pink: Color(red: 1.00, green: 0.50, blue: 0.70)
+        case .gray: Color(red: 0.78, green: 0.80, blue: 0.84)
         }
     }
 
     var wash: Color {
-        color.opacity(0.42)
+        color.opacity(0.16)
     }
 
     static func parse(_ raw: String) -> SpaceTint? {

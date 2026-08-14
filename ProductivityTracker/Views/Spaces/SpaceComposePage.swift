@@ -124,12 +124,7 @@ struct SpaceComposePage: View {
         .scrollDismissesKeyboard(.immediately)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
-            LinearGradient(
-                colors: [tint.color.opacity(0.55), tint.color.opacity(0.16), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            SpaceCanvas.glow(tint.color)
         }
         .onChange(of: isActive) { _, active in
             if !active {

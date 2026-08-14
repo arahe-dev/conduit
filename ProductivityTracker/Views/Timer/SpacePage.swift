@@ -58,16 +58,7 @@ struct SpacePage: View {
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
-            LinearGradient(
-                colors: [
-                    space.tint.color.opacity(0.55),
-                    space.tint.color.opacity(0.16),
-                    Color.black
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            SpaceCanvas.glow(space.tint.color)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(isActivePage ? AccessibilityIDs.timerCard : "timer-card-idle")

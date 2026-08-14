@@ -30,12 +30,14 @@ final class LiveActivityStateTests: XCTestCase {
         XCTAssertEqual(live.lastState?.spaceName, "Work")
         XCTAssertEqual(live.lastState?.taskName, "Deep Work")
         XCTAssertEqual(live.dismissed, 0)
+        let runningAnchor = live.lastState?.displayStart
 
         time.advance(by: 10)
         try controller.stop()
         XCTAssertEqual(live.lastState?.isRunning, false)
         XCTAssertEqual(live.lastState?.elapsedAtPause ?? 0, 10, accuracy: 0.01)
         XCTAssertNotNil(live.lastState?.pauseTime)
+        XCTAssertEqual(live.lastState?.displayStart, runningAnchor)
         XCTAssertEqual(live.lastState?.tintRaw, SpaceTint.orange.rawValue)
         XCTAssertEqual(live.lastState?.iconValue, SpaceIcon.work.value)
         XCTAssertEqual(live.dismissed, 0)
@@ -163,7 +165,9 @@ final class LiveActivityStateTests: XCTestCase {
         )
         try controller.bootstrap()
         try controller.start()
+        let publishes = live.started
         controller.selectSpace(DemoIDs.chores)
+        XCTAssertEqual(live.started, publishes)
         live.startOrUpdate(from: controller, at: time.now())
         XCTAssertEqual(live.lastState?.spaceName, "Work")
         XCTAssertEqual(controller.liveActivitySpace()?.name, "Work")
