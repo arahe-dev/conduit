@@ -23,6 +23,7 @@ final class ProductivityTrackerUITests: XCTestCase {
         XCTAssertFalse(lap.isEnabled)
         XCTAssertFalse(app.descendants(matching: .any)["glass-surface"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["stopwatch-display"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.descendants(matching: .any)["save-time-button"].firstMatch.exists)
     }
 
     func testSwipeTimerOrTaskPanelChangesSpace() {
@@ -42,14 +43,20 @@ final class ProductivityTrackerUITests: XCTestCase {
     }
 
     func testSwipePastLastSpaceShowsAddSpacePage() {
-        XCTAssertTrue(app.descendants(matching: .any)["space-pager"].firstMatch.waitForExistence(timeout: 5))
-        let card = app.descendants(matching: .any)["timer-card"].firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout: 5))
-        swipe(element: card, from: 0.85, to: 0.15)
-        swipe(element: card, from: 0.85, to: 0.15)
-        swipe(element: card, from: 0.85, to: 0.15)
-        XCTAssertTrue(app.descendants(matching: .any)["add-space-page"].firstMatch.waitForExistence(timeout: 3))
+        let pager = app.descendants(matching: .any)["space-pager"].firstMatch
+        XCTAssertTrue(pager.waitForExistence(timeout: 5))
+        swipe(element: pager, from: 0.92, to: 0.05)
+        swipe(element: pager, from: 0.92, to: 0.05)
+        swipe(element: pager, from: 0.92, to: 0.05)
+        XCTAssertTrue(app.descendants(matching: .any)["add-space-page"].firstMatch.waitForExistence(timeout: 4))
         XCTAssertTrue(app.descendants(matching: .any)["create-space-button"].firstMatch.exists)
+    }
+
+    func testTapSpaceNameOpensEditor() {
+        let space = app.descendants(matching: .any)["space-name"].firstMatch
+        XCTAssertTrue(space.waitForExistence(timeout: 10))
+        space.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["space-editor"].firstMatch.waitForExistence(timeout: 4))
     }
 
     func testInlineAddTask() {
@@ -168,7 +175,7 @@ final class ProductivityTrackerUITests: XCTestCase {
     private func swipe(element: XCUIElement, from startX: CGFloat, to endX: CGFloat) {
         let start = element.coordinate(withNormalizedOffset: CGVector(dx: startX, dy: 0.5))
         let end = element.coordinate(withNormalizedOffset: CGVector(dx: endX, dy: 0.5))
-        start.press(forDuration: 0.05, thenDragTo: end)
+        start.press(forDuration: 0.08, thenDragTo: end)
     }
 }
 
@@ -224,12 +231,12 @@ final class ScreenshotUITests: XCTestCase {
         settingsApp.terminate()
 
         let addSpaceApp = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "idle"])
-        let pagerCard = addSpaceApp.descendants(matching: .any)["timer-card"].firstMatch
-        XCTAssertTrue(pagerCard.waitForExistence(timeout: 5))
-        swipe(element: pagerCard, from: 0.85, to: 0.15)
-        swipe(element: pagerCard, from: 0.85, to: 0.15)
-        swipe(element: pagerCard, from: 0.85, to: 0.15)
-        XCTAssertTrue(addSpaceApp.descendants(matching: .any)["add-space-page"].firstMatch.waitForExistence(timeout: 3))
+        let pager = addSpaceApp.descendants(matching: .any)["space-pager"].firstMatch
+        XCTAssertTrue(pager.waitForExistence(timeout: 5))
+        swipe(element: pager, from: 0.92, to: 0.05)
+        swipe(element: pager, from: 0.92, to: 0.05)
+        swipe(element: pager, from: 0.92, to: 0.05)
+        XCTAssertTrue(addSpaceApp.descendants(matching: .any)["add-space-page"].firstMatch.waitForExistence(timeout: 4))
         save(addSpaceApp.screenshot(), name: "10-add-space", directory: screenshotDir)
         addSpaceApp.terminate()
 
@@ -267,6 +274,6 @@ final class ScreenshotUITests: XCTestCase {
     private func swipe(element: XCUIElement, from startX: CGFloat, to endX: CGFloat) {
         let start = element.coordinate(withNormalizedOffset: CGVector(dx: startX, dy: 0.5))
         let end = element.coordinate(withNormalizedOffset: CGVector(dx: endX, dy: 0.5))
-        start.press(forDuration: 0.05, thenDragTo: end)
+        start.press(forDuration: 0.08, thenDragTo: end)
     }
 }

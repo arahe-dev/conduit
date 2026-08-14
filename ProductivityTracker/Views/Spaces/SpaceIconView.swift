@@ -34,7 +34,7 @@ struct SpaceIconView: View {
                         endRadius: pointSize
                     )
                 )
-                .shadow(color: tint.opacity(0.55), radius: pointSize * 0.18, y: pointSize * 0.04)
+                .shadow(color: tint.opacity(0.35), radius: max(2, pointSize * 0.08), y: 1)
         }
         .accessibilityHidden(true)
     }

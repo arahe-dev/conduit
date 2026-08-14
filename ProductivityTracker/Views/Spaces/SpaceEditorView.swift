@@ -6,14 +6,12 @@ struct SpaceEditorView: View {
     @State private var name: String
     @State private var newTask = ""
     @State private var focusKeyword: String
-    @State private var reminderSeconds: Double
 
     init(controller: SessionController, space: Space) {
         self.controller = controller
         self.space = space
         _name = State(initialValue: space.name)
         _focusKeyword = State(initialValue: space.focusKeyword ?? "")
-        _reminderSeconds = State(initialValue: space.distractionTimeoutSeconds)
     }
 
     var body: some View {
@@ -57,19 +55,6 @@ struct SpaceEditorView: View {
                     ForEach(space.enabledTasksSorted, id: \.id) { task in
                         Text(task.name).tag(Optional(task.id))
                     }
-                }
-            }
-            Section("Reminder") {
-                Picker("Reminder", selection: $reminderSeconds) {
-                    Text("Off").tag(0.0)
-                    Text("1 min").tag(60.0)
-                    Text("5 min").tag(300.0)
-                    Text("10 min").tag(600.0)
-                    Text("15 min").tag(900.0)
-                    Text("30 min").tag(1800.0)
-                }
-                .onChange(of: reminderSeconds) { _, newValue in
-                    try? controller.setReminder(for: space, seconds: newValue)
                 }
             }
             Section("Focus") {

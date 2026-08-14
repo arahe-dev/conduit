@@ -28,38 +28,38 @@ struct LiveActivityLockScreen: View {
     var showsControls: Bool = true
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 5) {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(state.spaceName)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(state.tint)
-                    .shadow(color: state.tint.opacity(0.55), radius: 8)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.75)
                 Text(state.taskName.isEmpty ? " " : state.taskName)
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.white.opacity(0.72))
                     .lineLimit(1)
                     .accessibilityIdentifier("live-activity-context")
                 LiveActivityElapsedText(
                     state: state,
-                    font: .system(size: 42, weight: .light, design: .default)
+                    font: .system(size: 32, weight: .light, design: .default)
                 )
                 if showsControls {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         liveControl
                         closeControl
                     }
-                    .padding(.top, 4)
+                    .padding(.top, 6)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 92)
+            SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 48)
                 .accessibilityLabel(state.spaceName)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 4)
+        .padding(.leading, 18)
+        .padding(.trailing, 16)
+        .padding(.vertical, 14)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("live-activity-lock")
         .accessibilityLabel("\(state.spaceName), \(state.taskName), \(ElapsedFormatter.compact(state.elapsedAtPause))")
@@ -95,9 +95,9 @@ struct LiveActivityLockScreen: View {
 
     private func controlGlyph(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.body.weight(.semibold))
+            .font(.footnote.weight(.semibold))
             .foregroundStyle(.white)
-            .frame(width: 36, height: 36)
+            .frame(width: 32, height: 32)
             .background(Circle().fill(.white.opacity(0.14)))
             .overlay {
                 Circle().strokeBorder(.white.opacity(0.22), lineWidth: 1)
@@ -109,7 +109,7 @@ struct DynamicIslandCompactLeading: View {
     var state: SessionActivityAttributes.ContentState
 
     var body: some View {
-        SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 22)
+            SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 20)
             .accessibilityLabel(state.spaceName)
     }
 }
@@ -127,7 +127,7 @@ struct DynamicIslandMinimal: View {
     var state: SessionActivityAttributes.ContentState
 
     var body: some View {
-        SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 18)
+        SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 16)
     }
 }
 
@@ -137,7 +137,7 @@ struct DynamicIslandExpandedContent: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 36)
+            SpaceIconView(icon: state.icon, tint: state.tint, pointSize: 28)
             VStack(alignment: .leading, spacing: 1) {
                 Text(state.spaceName)
                     .font(.caption.weight(.semibold))

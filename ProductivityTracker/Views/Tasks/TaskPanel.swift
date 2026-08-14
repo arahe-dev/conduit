@@ -13,57 +13,64 @@ struct TaskPanel: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        List {
             if tasks.isEmpty {
-                HStack {
-                    Text("No Tasks")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding(.horizontal, 4)
-                .padding(.top, 16)
+                Text("No Tasks")
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(tasks, id: \.id) { task in
-                        let snap = controller.snapshot(for: space.id)
-                        let isSelected = task.id == snap.currentTaskID && !task.isCompleted
-                        let parts = controller.taskElapsedParts(for: task)
-                        TaskRow(
-                            task: task,
-                            isActive: isSelected,
-                            accent: space.tint.color,
-                            isLive: isActivePage && isSelected && snap.isRunning,
-                            closedElapsed: parts.closed,
-                            openStartedAt: parts.openStartedAt
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture(count: 2) {
-                            try? controller.setTaskCompleted(task, isCompleted: !task.isCompleted)
-                        }
-                        .onTapGesture {
-                            try? controller.selectTask(task)
-                        }
-                        .contextMenu {
-                            Button(task.isCompleted ? "Mark Incomplete" : "Complete") {
-                                try? controller.setTaskCompleted(task, isCompleted: !task.isCompleted)
-                            }
-                            Button("Rename") { onRename(task) }
-                            Button(task.isEnabled ? "Disable" : "Enable") {
-                                try? controller.setTaskEnabled(task, isEnabled: !task.isEnabled)
-                            }
-                            Button("Delete", role: .destructive) {
-                                try? controller.deleteTask(task)
-                            }
-                        }
-                        Divider().opacity(0.22)
+            ForEach(tasks, id: \.id) { task in
+                let snap = controller.snapshot(for: space.id)
+                let isSelected = task.id == snap.currentTaskID && !task.isCompleted
+                let parts = controller.taskElapsedParts(for: task)
+                Button {
+                    try? controller.selectTask(task)
+                } label: {
+                    TaskRow(
+                        task: task,
+                        isActive: isSelected,
+                        accent: space.tint.color,
+                        isLive: isActivePage && isSelected && snap.isRunning,
+                        closedElapsed: parts.closed,
+                        openStartedAt: parts.openStartedAt
+                    )
+                }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                .listRowBackground(Color.clear)
+                .simultaneousGesture(
+                    TapGesture(count: 2).onEnded {
+                        try? controller.setTaskCompleted(task, isCompleted: !task.isCompleted)
                     }
-                    addRow
+                )
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(task.isCompleted ? "Undo" : "Done") {
+                        try? controller.setTaskCompleted(task, isCompleted: !task.isCompleted)
+                    }
+                    .tint(space.tint.color)
+                }
+                .contextMenu {
+                    Button(task.isCompleted ? "Mark Incomplete" : "Complete") {
+                        try? controller.setTaskCompleted(task, isCompleted: !task.isCompleted)
+                    }
+                    Button("Rename") { onRename(task) }
+                    Button(task.isEnabled ? "Disable" : "Enable") {
+                        try? controller.setTaskEnabled(task, isEnabled: !task.isEnabled)
+                    }
+                    Button("Delete", role: .destructive) {
+                        try? controller.deleteTask(task)
+                    }
                 }
             }
-            .scrollIndicators(.hidden)
+            addRow
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
         }
+        .listStyle(.plain)
+        .scrollIndicators(.hidden)
+        .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
         .accessibilityIdentifier(isActivePage ? AccessibilityIDs.taskPanel : "task-panel-idle")
     }
 
@@ -79,7 +86,6 @@ struct TaskPanel: View {
             }
             .accessibilityIdentifier(isActivePage ? "add-task-empty" : "add-task-empty-idle")
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
     }
 }

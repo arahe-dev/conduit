@@ -26,7 +26,7 @@ final class SessionController {
     var distraction = DistractionMonitor(activeSessionID: nil, threshold: 300)
 
     private let context: ModelContext
-    private let launch: LaunchConfiguration
+    let launch: LaunchConfiguration
 
     var snapshot: TimerSnapshot {
         _ = mutation
@@ -156,7 +156,7 @@ final class SessionController {
         try start(in: space)
     }
 
-    func start(in space: Space) throws {
+    func start(in space: Space, publishLiveActivity: Bool = true) throws {
         if selectedSpaceID != space.id {
             selectSpace(space.id)
         }
@@ -175,7 +175,9 @@ final class SessionController {
         }
         Haptics.start()
         notifications.requestAuthorizationIfNeeded()
-        liveActivity.startOrUpdate(from: self, at: now)
+        if publishLiveActivity {
+            liveActivity.startOrUpdate(from: self, at: now)
+        }
         try context.save()
         noteChange()
     }
@@ -185,10 +187,12 @@ final class SessionController {
         try stop(in: space)
     }
 
-    func stop(in space: Space) throws {
+    func stop(in space: Space, publishLiveActivity: Bool = true) throws {
         let now = timeSource.now()
         try freezeSpace(space.id, at: now, haptic: true)
-        liveActivity.startOrUpdate(from: self, at: now)
+        if publishLiveActivity {
+            liveActivity.startOrUpdate(from: self, at: now)
+        }
         try context.save()
         noteChange()
     }
@@ -206,13 +210,16 @@ final class SessionController {
         try reset(in: space)
     }
 
-    func reset(in space: Space) throws {
+    func reset(in space: Space, publishLiveActivity: Bool = true) throws {
         if selectedSpaceID != space.id {
             selectSpace(space.id)
         }
         let engine = engine(for: space.id)
-        guard engine.snapshot.phase == .stopped else { return }
         let now = timeSource.now()
+        if engine.snapshot.phase == .running {
+            try freezeSpace(space.id, at: now, haptic: false)
+        }
+        guard engine.snapshot.phase == .stopped else { return }
         try closeOpenIntervals(sessionID: engine.snapshot.sessionID, at: now)
         if let session = session(id: engine.snapshot.sessionID) {
             let elapsed = engine.snapshot.elapsed(at: now)
@@ -229,7 +236,9 @@ final class SessionController {
         engine.resetDisplay()
         engine.selectTask(keptTask)
         publish(engine)
-        liveActivity.dismissImmediate()
+        if publishLiveActivity {
+            liveActivity.dismissImmediate()
+        }
         try context.save()
         noteChange()
     }
@@ -523,19 +532,59 @@ final class SessionController {
         try allSessions().filter { $0.endedAt != nil }
     }
 
-    func startFromLiveActivity() throws {
-        guard let space = liveActivitySpace() else { throw SessionControllerError.noSpace }
-        try start(in: space)
+    func saveTime(in space: Space) throws {
+        let now = timeSource.now()
+        let snap = snapshot(for: space.id)
+        let elapsed = snap.elapsed(at: now)
+        guard elapsed > 0.0005 else { return }
+        let taskName = space.tasks.first(where: { $0.id == snap.currentTaskID })?.name
+        let record = TimeSave(
+            name: TimeSave.makeName(space: space.name, task: taskName, at: now),
+            savedAt: now,
+            elapsed: elapsed,
+            spaceID: space.id,
+            spaceName: space.name,
+            taskName: taskName
+        )
+        context.insert(record)
+        try context.save()
+        Haptics.selection()
+        noteChange()
     }
 
-    func stopFromLiveActivity() throws {
-        guard let space = liveActivitySpace() else { throw SessionControllerError.noSpace }
-        try stop(in: space)
+    func savedTimes(filter: SavedTimeFilter) throws -> [TimeSave] {
+        let descriptor = FetchDescriptor<TimeSave>(sortBy: [SortDescriptor(\.savedAt, order: .reverse)])
+        let all = try context.fetch(descriptor)
+        switch filter {
+        case .all:
+            return all
+        case .space(let id):
+            return all.filter { $0.spaceID == id }
+        }
     }
 
-    func resetFromLiveActivity() throws {
-        guard let space = liveActivitySpace() else { throw SessionControllerError.noSpace }
-        try reset(in: space)
+    func deleteSavedTime(_ record: TimeSave) throws {
+        context.delete(record)
+        try context.save()
+        noteChange()
+    }
+
+    func startFromLiveActivity() async {
+        guard let space = liveActivitySpace() else { return }
+        try? start(in: space, publishLiveActivity: false)
+        await liveActivity.startOrUpdateAndWait(from: self, at: timeSource.now())
+    }
+
+    func stopFromLiveActivity() async {
+        guard let space = liveActivitySpace() else { return }
+        try? stop(in: space, publishLiveActivity: false)
+        await liveActivity.startOrUpdateAndWait(from: self, at: timeSource.now())
+    }
+
+    func resetFromLiveActivity() async {
+        guard let space = liveActivitySpace() else { return }
+        try? reset(in: space, publishLiveActivity: false)
+        await liveActivity.dismissAndWait()
     }
 
     func lapFromLiveActivity() throws {

@@ -5,6 +5,8 @@ struct StopwatchButtons: View {
     var space: Space
     var isActivePage: Bool
     var onLongPressLap: () -> Void
+    var onSaveTime: () -> Void
+    var onOpenSavedTimes: () -> Void
 
     private var phase: TimerPhase {
         _ = controller.mutation
@@ -14,10 +16,22 @@ struct StopwatchButtons: View {
     var body: some View {
         HStack {
             leftButton
-            Spacer()
+            Spacer(minLength: 8)
+            SaveTimeButton(
+                enabled: canSave,
+                isActivePage: isActivePage,
+                onSave: onSaveTime,
+                onOpenHistory: onOpenSavedTimes
+            )
+            Spacer(minLength: 8)
             rightButton
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, 22)
+    }
+
+    private var canSave: Bool {
+        _ = controller.mutation
+        return controller.snapshot(for: space.id).phase != .idle
     }
 
     @ViewBuilder

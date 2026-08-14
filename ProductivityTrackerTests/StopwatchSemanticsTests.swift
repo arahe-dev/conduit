@@ -87,4 +87,41 @@ final class StopwatchSemanticsTests: XCTestCase {
         XCTAssertEqual(controller.snapshot.phase.leftControl, .reset)
         XCTAssertEqual(controller.snapshot.phase.rightControl, .start)
     }
+
+    func testResetWhileRunningArchivesAndClears() throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 1000))
+        let live = NullLiveActivityManager()
+        let controller = SessionController(
+            context: ModelContext(try PersistenceController.makeContainer(inMemory: true)),
+            timeSource: time,
+            notifications: RecordingNotificationService(),
+            liveActivity: live,
+            settings: SettingsStore(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            launch: LaunchConfiguration(uiTesting: true, resetStore: true, screenshotMode: false, startRunning: false, frozenElapsed: nil, inMemoryStore: true)
+        )
+        try controller.bootstrap()
+        try controller.start()
+        time.advance(by: 12)
+        try controller.reset()
+        XCTAssertEqual(controller.snapshot.phase, .idle)
+        XCTAssertEqual(controller.displayedElapsed(at: time.now()), 0, accuracy: 0.001)
+        XCTAssertEqual(try controller.historicalSessions().count, 1)
+        XCTAssertEqual(live.dismissed, 1)
+    }
+
+    func testSaveTimeDoesNotReset() throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 1_700_000_000))
+        let controller = try makeController(time: time)
+        try controller.start()
+        time.advance(by: 9)
+        try controller.saveTime(in: controller.selectedSpace!)
+        XCTAssertEqual(controller.snapshot.phase, .running)
+        XCTAssertEqual(controller.displayedElapsed(at: time.now()), 9, accuracy: 0.001)
+        let saved = try controller.savedTimes(filter: .space(DemoIDs.work))
+        XCTAssertEqual(saved.count, 1)
+        XCTAssertEqual(saved[0].elapsed, 9, accuracy: 0.001)
+        XCTAssertTrue(saved[0].name.contains("Work"))
+        XCTAssertTrue(try controller.savedTimes(filter: .all).count == 1)
+        XCTAssertTrue(try controller.savedTimes(filter: .space(DemoIDs.chores)).isEmpty)
+    }
 }

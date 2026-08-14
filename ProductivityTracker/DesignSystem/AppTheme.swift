@@ -18,6 +18,7 @@ enum AccessibilityIDs {
     static let addTaskInline = "add-task-inline"
     static let createSpaceButton = "create-space-button"
     static let spacePager = "space-pager"
+    static let saveTimeButton = "save-time-button"
 }
 
 enum LayoutMetrics {

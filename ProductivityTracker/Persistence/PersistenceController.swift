@@ -7,7 +7,8 @@ enum PersistenceController {
             Space.self,
             TaskItem.self,
             Session.self,
-            TaskInterval.self
+            TaskInterval.self,
+            TimeSave.self
         ])
         let configuration: ModelConfiguration
         if inMemory {

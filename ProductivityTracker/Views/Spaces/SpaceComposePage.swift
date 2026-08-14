@@ -4,6 +4,7 @@ struct SpaceComposePage: View {
     @Bindable var controller: SessionController
     var pageIndex: Int
     var pageCount: Int
+    var isActive: Bool
     var onCreated: (Space) -> Void
 
     @State private var name = ""
@@ -11,6 +12,12 @@ struct SpaceComposePage: View {
     @State private var icon = SpaceIcon.fallback
     @State private var taskDraft = ""
     @State private var tasks: [String] = ["Task"]
+    @FocusState private var focus: Field?
+
+    private enum Field: Hashable {
+        case name
+        case task
+    }
 
     var body: some View {
         ScrollView {
@@ -28,6 +35,7 @@ struct SpaceComposePage: View {
                 TextField("Name", text: $name)
                     .font(.title2.weight(.semibold))
                     .textInputAutocapitalization(.words)
+                    .focused($focus, equals: .name)
                     .accessibilityIdentifier("new-space-name")
 
                 SpaceIconPicker(icon: $icon, name: name, tint: tint.color)
@@ -75,6 +83,7 @@ struct SpaceComposePage: View {
                     }
                     HStack {
                         TextField("Add a task", text: $taskDraft)
+                            .focused($focus, equals: .task)
                             .accessibilityIdentifier("compose-task-field")
                         Button("Add") {
                             let value = taskDraft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -112,14 +121,25 @@ struct SpaceComposePage: View {
             .padding(.bottom, 24)
         }
         .scrollIndicators(.hidden)
+        .scrollDismissesKeyboard(.immediately)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             LinearGradient(
-                colors: [tint.wash, Color.black],
+                colors: [tint.color.opacity(0.55), tint.color.opacity(0.16), Color.black],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
+        }
+        .onChange(of: isActive) { _, active in
+            if !active {
+                focus = nil
+                Keyboard.dismiss()
+            }
+        }
+        .onDisappear {
+            focus = nil
+            Keyboard.dismiss()
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityIDs.addSpacePage)

@@ -14,6 +14,8 @@ struct SpacePage: View {
     var onLongPressLap: () -> Void
     var onRenameTask: (TaskItem) -> Void
     var onEditSpace: () -> Void
+    var onSaveTime: () -> Void
+    var onOpenSavedTimes: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,7 +30,9 @@ struct SpacePage: View {
                 controller: controller,
                 space: space,
                 isActivePage: isActivePage,
-                onLongPressLap: onLongPressLap
+                onLongPressLap: onLongPressLap,
+                onSaveTime: onSaveTime,
+                onOpenSavedTimes: onOpenSavedTimes
             )
             .padding(.top, 18)
             PageDots(
@@ -50,12 +54,16 @@ struct SpacePage: View {
             .frame(maxHeight: .infinity)
         }
         .padding(.horizontal, LayoutMetrics.horizontalMargin)
-        .padding(.top, 6)
+        .padding(.top, 8)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
             LinearGradient(
-                colors: [space.tint.wash, space.tint.color.opacity(0.05), Color.black],
+                colors: [
+                    space.tint.color.opacity(0.55),
+                    space.tint.color.opacity(0.16),
+                    Color.black
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -67,11 +75,10 @@ struct SpacePage: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            SpaceIconView(icon: space.icon, tint: space.tint.color, pointSize: 34)
+            SpaceIconView(icon: space.icon, tint: space.tint.color, pointSize: 24)
             Text(space.name)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(space.tint.color)
-                .shadow(color: space.tint.color.opacity(0.35), radius: 8)
                 .lineLimit(1)
                 .accessibilityIdentifier(isActivePage ? AccessibilityIDs.spaceName : "space-name-idle")
                 .accessibilityLabel(space.name)
@@ -79,9 +86,8 @@ struct SpacePage: View {
         }
         .padding(.trailing, 8)
         .contentShape(Rectangle())
-        .onLongPressGesture {
-            onEditSpace()
-        }
-        .accessibilityHint("Long press to edit this Space")
+        .onTapGesture(perform: onEditSpace)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens Space settings")
     }
 }

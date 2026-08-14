@@ -45,13 +45,14 @@ enum LiveActivityPresentation {
         now: Date,
         tintRaw: String = SpaceTint.orange.rawValue,
         iconKindRaw: String = SpaceIconKind.symbol.rawValue,
-        iconValue: String = SpaceIcon.work.value
+        iconValue: String = SpaceIcon.work.value,
+        displayStart: Date? = nil
     ) -> SessionActivityAttributes.ContentState {
         SessionActivityAttributes.ContentState(
             spaceName: spaceName,
             taskName: taskName,
             phaseRaw: phaseRaw,
-            displayStart: now.addingTimeInterval(-elapsed),
+            displayStart: displayStart ?? now.addingTimeInterval(-elapsed),
             isRunning: isRunning,
             elapsedAtPause: elapsed,
             tintRaw: tintRaw,

@@ -6,9 +6,7 @@ struct StopFromLiveActivityIntent: LiveActivityIntent {
 
     func perform() async throws -> some IntentResult {
         #if APP_TARGET
-        await MainActor.run {
-            try? AppRuntime.shared.sessionController?.stopFromLiveActivity()
-        }
+        await AppRuntime.shared.sessionController?.stopFromLiveActivity()
         #endif
         return .result()
     }
@@ -20,9 +18,7 @@ struct ResumeFromLiveActivityIntent: LiveActivityIntent {
 
     func perform() async throws -> some IntentResult {
         #if APP_TARGET
-        await MainActor.run {
-            try? AppRuntime.shared.sessionController?.startFromLiveActivity()
-        }
+        await AppRuntime.shared.sessionController?.startFromLiveActivity()
         #endif
         return .result()
     }
@@ -48,9 +44,7 @@ struct ResetFromLiveActivityIntent: LiveActivityIntent {
 
     func perform() async throws -> some IntentResult {
         #if APP_TARGET
-        await MainActor.run {
-            try? AppRuntime.shared.sessionController?.resetFromLiveActivity()
-        }
+        await AppRuntime.shared.sessionController?.resetFromLiveActivity()
         #endif
         return .result()
     }

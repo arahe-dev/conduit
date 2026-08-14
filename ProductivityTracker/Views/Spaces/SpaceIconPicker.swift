@@ -8,7 +8,7 @@ struct SpaceIconPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                SpaceIconView(icon: icon, tint: tint, pointSize: 56)
+                SpaceIconView(icon: icon, tint: tint, pointSize: 40)
                 Spacer()
             }
 
@@ -22,25 +22,25 @@ struct SpaceIconPicker: View {
 
             switch icon.kind {
             case .symbol:
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], spacing: 10) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 34), spacing: 8)], spacing: 8) {
                     ForEach(SpaceIcon.symbols, id: \.self) { symbol in
                         iconCell(selected: icon.value == symbol) {
                             icon = SpaceIcon(kind: .symbol, value: symbol)
                         } content: {
                             Image(systemName: symbol)
-                                .font(.body.weight(.semibold))
+                                .font(.footnote.weight(.semibold))
                                 .foregroundStyle(.white)
                         }
                         .accessibilityIdentifier("icon-symbol-\(symbol)")
                     }
                 }
             case .emoji:
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], spacing: 10) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 34), spacing: 8)], spacing: 8) {
                     ForEach(SpaceIcon.emojis, id: \.self) { emoji in
                         iconCell(selected: icon.value == emoji) {
                             icon = SpaceIcon(kind: .emoji, value: emoji)
                         } content: {
-                            Text(emoji).font(.title3)
+                            Text(emoji).font(.body)
                         }
                         .accessibilityIdentifier("icon-emoji-\(emoji)")
                     }
@@ -87,7 +87,7 @@ struct SpaceIconPicker: View {
     private func iconCell<Content: View>(selected: Bool, action: @escaping () -> Void, @ViewBuilder content: () -> Content) -> some View {
         Button(action: action) {
             content()
-                .frame(width: 44, height: 44)
+                .frame(width: 32, height: 32)
                 .background(Circle().fill(selected ? tint.opacity(0.55) : Color.white.opacity(0.08)))
                 .overlay {
                     Circle().strokeBorder(selected ? Color.white.opacity(0.85) : Color.white.opacity(0.12), lineWidth: selected ? 2 : 1)
