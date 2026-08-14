@@ -3,7 +3,7 @@ import SwiftUI
 struct TimerScreen: View {
     @Bindable var controller: SessionController
     @Binding var showSettings: Bool
-    @State private var spaceID: UUID? = DemoIDs.work
+    @State private var page: SpacePagerPage? = .space(DemoIDs.work)
     @State private var composeOpen = false
     @State private var peekRaw: CGFloat = 0
     @State private var dismissDrag: CGFloat = 0
@@ -37,12 +37,17 @@ struct TimerScreen: View {
         }
         .background(Color.black.ignoresSafeArea())
         .onAppear {
-            spaceID = controller.selectedSpaceID ?? controller.spaces.first?.id ?? DemoIDs.work
+            if let selected = controller.selectedSpaceID {
+                page = .space(selected)
+            }
         }
-        .onChange(of: spaceID) { _, newValue in
+        .onChange(of: page) { _, newValue in
             Keyboard.dismiss()
-            if !composeOpen, let newValue, newValue != controller.selectedSpaceID {
-                controller.selectSpace(newValue, haptic: true)
+            if case .space(let id) = newValue, id != controller.selectedSpaceID {
+                controller.selectSpace(id, haptic: true)
+            }
+            if newValue == .compose {
+                composeOpen = true
             }
         }
         .sheet(isPresented: $showTaskPicker) {
@@ -89,13 +94,19 @@ struct TimerScreen: View {
     }
 
     private var historySpaceID: UUID? {
-        composeOpen ? controller.selectedSpaceID : spaceID
+        if case .space(let id) = page { return id }
+        return controller.selectedSpaceID
     }
 
     private var pageCount: Int { controller.spaces.count + 1 }
 
+    private var currentSpaceID: UUID? {
+        if case .space(let id) = page { return id }
+        return controller.spaces.last?.id
+    }
+
     private var isOnLastSpace: Bool {
-        !composeOpen && spaceID == controller.spaces.last?.id
+        !composeOpen && currentSpaceID == controller.spaces.last?.id
     }
 
     private func pageIndex(for id: UUID) -> Int {
@@ -112,7 +123,7 @@ struct TimerScreen: View {
                         SpacePage(
                             controller: controller,
                             space: space,
-                            isActivePage: space.id == spaceID && !composeOpen,
+                            isActivePage: currentSpaceID == space.id && !composeOpen,
                             pageIndex: pageIndex(for: space.id),
                             pageCount: pageCount,
                             onLongPressLap: { showTaskPicker = true },
@@ -125,48 +136,68 @@ struct TimerScreen: View {
                             onOpenSavedTimes: { showSavedTimes = true }
                         )
                         .frame(width: width, height: height)
-                        .id(space.id)
+                        .id(SpacePagerPage.space(space.id))
+                    }
+                    if controller.launch.uiTesting {
+                        composePage(width: width, height: height)
+                            .id(SpacePagerPage.compose)
                     }
                 }
                 .scrollTargetLayout()
             }
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $spaceID)
+            .scrollPosition(id: $page)
             .scrollDismissesKeyboard(.immediately)
-            .background(
-                ComposePullCatcher(
-                    onLastSpace: isOnLastSpace,
-                    composeOpen: composeOpen,
-                    pageWidth: width,
-                    onPeekChanged: { peekRaw = $0 },
-                    onPeekEnded: { translation, predicted in
-                        finishPeek(translation: translation, predicted: predicted, pageWidth: width)
-                    }
-                )
+            .simultaneousGesture(
+                peekGesture(pageWidth: width),
+                including: (isOnLastSpace && !controller.launch.uiTesting) ? .all : .none
             )
 
-            if reveal > 0.5 {
-                SpaceComposePage(
-                    controller: controller,
-                    pageIndex: max(pageCount - 1, 0),
-                    pageCount: pageCount,
-                    isActive: composeOpen,
-                    onCreated: { space in
-                        closeCompose(animated: false)
-                        controller.selectSpace(space.id, haptic: true)
-                        spaceID = space.id
-                    }
-                )
-                .frame(width: width, height: height)
-                .offset(x: width - reveal)
-                .allowsHitTesting(composeOpen)
-                .gesture(composeDismissGesture(pageWidth: width))
+            if !controller.launch.uiTesting, reveal > 0.5 {
+                composePage(width: width, height: height)
+                    .offset(x: width - reveal)
+                    .allowsHitTesting(composeOpen)
+                    .gesture(composeDismissGesture(pageWidth: width))
             }
         }
         .frame(width: width, height: height)
         .clipped()
         .accessibilityIdentifier(AccessibilityIDs.spacePager)
+    }
+
+    private func composePage(width: CGFloat, height: CGFloat) -> some View {
+        SpaceComposePage(
+            controller: controller,
+            pageIndex: max(pageCount - 1, 0),
+            pageCount: pageCount,
+            isActive: composeOpen || page == .compose,
+            onCreated: { space in
+                closeCompose(animated: false)
+                controller.selectSpace(space.id, haptic: true)
+                page = .space(space.id)
+            }
+        )
+        .frame(width: width, height: height)
+    }
+
+    private func peekGesture(pageWidth: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                guard isOnLastSpace, value.translation.width < 0 else { return }
+                peekRaw = -value.translation.width
+            }
+            .onEnded { value in
+                guard isOnLastSpace else {
+                    peekRaw = 0
+                    return
+                }
+                finishPeek(
+                    translation: max(0, -value.translation.width),
+                    predicted: max(0, -value.predictedEndTranslation.width),
+                    pageWidth: pageWidth
+                )
+            }
     }
 
     private func composeReveal(pageWidth: CGFloat) -> CGFloat {
@@ -188,6 +219,7 @@ struct TimerScreen: View {
                 composeOpen = true
                 peekRaw = 0
                 dismissDrag = 0
+                page = .compose
             }
         } else {
             withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.86)) {
@@ -214,6 +246,9 @@ struct TimerScreen: View {
                 composeOpen = false
                 peekRaw = 0
                 dismissDrag = 0
+                if let last = controller.spaces.last?.id {
+                    page = .space(last)
+                }
             }
         } else {
             withAnimation(.interactiveSpring(response: 0.24, dampingFraction: 0.9)) {
@@ -227,6 +262,9 @@ struct TimerScreen: View {
             composeOpen = false
             peekRaw = 0
             dismissDrag = 0
+            if case .compose = page, let last = controller.spaces.last?.id {
+                page = .space(last)
+            }
         }
         if animated {
             withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.94), apply)
