@@ -55,7 +55,7 @@ struct ComposePullCatcher: UIViewRepresentable {
         }
     }
 
-    final class Coordinator: NSObject {
+    final class Coordinator: NSObject, @unchecked Sendable {
         var onLastSpace = false
         var composeOpen = false
         var pageWidth: CGFloat = 390
