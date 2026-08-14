@@ -7,7 +7,7 @@ struct StopFromLiveActivityIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         #if APP_TARGET
         await MainActor.run {
-            try? AppRuntime.shared.sessionController?.stop()
+            try? AppRuntime.shared.sessionController?.stopFromLiveActivity()
         }
         #endif
         return .result()
@@ -21,7 +21,7 @@ struct ResumeFromLiveActivityIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         #if APP_TARGET
         await MainActor.run {
-            try? AppRuntime.shared.sessionController?.start()
+            try? AppRuntime.shared.sessionController?.startFromLiveActivity()
         }
         #endif
         return .result()
@@ -35,7 +35,21 @@ struct LapFromLiveActivityIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         #if APP_TARGET
         await MainActor.run {
-            try? AppRuntime.shared.sessionController?.lap()
+            try? AppRuntime.shared.sessionController?.lapFromLiveActivity()
+        }
+        #endif
+        return .result()
+    }
+}
+
+struct ResetFromLiveActivityIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource { "Reset" }
+    static var openAppWhenRun: Bool { false }
+
+    func perform() async throws -> some IntentResult {
+        #if APP_TARGET
+        await MainActor.run {
+            try? AppRuntime.shared.sessionController?.resetFromLiveActivity()
         }
         #endif
         return .result()

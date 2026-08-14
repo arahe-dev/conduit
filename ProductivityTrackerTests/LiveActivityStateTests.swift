@@ -35,6 +35,9 @@ final class LiveActivityStateTests: XCTestCase {
         try controller.stop()
         XCTAssertEqual(live.lastState?.isRunning, false)
         XCTAssertEqual(live.lastState?.elapsedAtPause ?? 0, 10, accuracy: 0.01)
+        XCTAssertNotNil(live.lastState?.pauseTime)
+        XCTAssertEqual(live.lastState?.tintRaw, SpaceTint.orange.rawValue)
+        XCTAssertEqual(live.lastState?.iconValue, SpaceIcon.work.value)
         XCTAssertEqual(live.dismissed, 0)
         time.advance(by: 20)
         try controller.start()
@@ -59,6 +62,83 @@ final class LiveActivityStateTests: XCTestCase {
         XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: false), "ResumeFromLiveActivityIntent")
         XCTAssertEqual(LiveActivityPresentation.exclusiveControl(isRunning: true), .stop)
         XCTAssertEqual(LiveActivityPresentation.exclusiveControl(isRunning: false), .start)
+        XCTAssertEqual(String(describing: ResetFromLiveActivityIntent.self), "ResetFromLiveActivityIntent")
+    }
+
+    func testLiveActivityContentIncludesTintAndIconFields() throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 2000))
+        let live = NullLiveActivityManager()
+        let controller = SessionController(
+            context: ModelContext(try PersistenceController.makeContainer(inMemory: true)),
+            timeSource: time,
+            notifications: RecordingNotificationService(),
+            liveActivity: live,
+            settings: SettingsStore(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            launch: LaunchConfiguration(
+                uiTesting: true,
+                resetStore: true,
+                screenshotMode: false,
+                startRunning: false,
+                frozenElapsed: nil,
+                inMemoryStore: true,
+                timerState: nil,
+                liveActivityPreview: false
+            )
+        )
+        try controller.bootstrap()
+        try controller.start()
+        XCTAssertEqual(live.lastState?.tintRaw, SpaceTint.orange.rawValue)
+        XCTAssertEqual(live.lastState?.iconKindRaw, SpaceIconKind.symbol.rawValue)
+        XCTAssertEqual(live.lastState?.iconValue, SpaceIcon.work.value)
+        XCTAssertEqual(live.lastState?.icon, .work)
+    }
+
+    func testLiveActivityRunningAndStoppedShareTimerIntervalModel() {
+        let now = Date(timeIntervalSince1970: 3000)
+        let running = LiveActivityPresentation.content(
+            spaceName: "Work",
+            taskName: "Deep Work",
+            phaseRaw: TimerPhase.running.rawValue,
+            isRunning: true,
+            elapsed: 42,
+            now: now,
+            tintRaw: SpaceTint.orange.rawValue,
+            iconKindRaw: SpaceIconKind.symbol.rawValue,
+            iconValue: SpaceIcon.work.value
+        )
+        XCTAssertTrue(running.isRunning)
+        XCTAssertEqual(running.elapsedAtPause, 42, accuracy: 0.001)
+        XCTAssertNil(running.pauseTime)
+        XCTAssertEqual(
+            running.timerRange.lowerBound.timeIntervalSince1970,
+            now.addingTimeInterval(-42).timeIntervalSince1970,
+            accuracy: 0.001
+        )
+
+        let stopped = LiveActivityPresentation.content(
+            spaceName: "Work",
+            taskName: "Deep Work",
+            phaseRaw: TimerPhase.stopped.rawValue,
+            isRunning: false,
+            elapsed: 42,
+            now: now,
+            tintRaw: SpaceTint.orange.rawValue,
+            iconKindRaw: SpaceIconKind.symbol.rawValue,
+            iconValue: SpaceIcon.work.value
+        )
+        XCTAssertFalse(stopped.isRunning)
+        XCTAssertEqual(stopped.elapsedAtPause, 42, accuracy: 0.001)
+        XCTAssertNotNil(stopped.pauseTime)
+        XCTAssertEqual(
+            stopped.pauseTime!.timeIntervalSince1970,
+            stopped.displayStart.addingTimeInterval(stopped.elapsedAtPause).timeIntervalSince1970,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            stopped.timerRange.lowerBound.timeIntervalSince1970,
+            running.timerRange.lowerBound.timeIntervalSince1970,
+            accuracy: 0.001
+        )
     }
 
     func testSpaceOwnershipStaysWithRunningSpace() throws {

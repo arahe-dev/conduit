@@ -38,7 +38,7 @@ struct LiveActivityPreviewScreen: View {
             content()
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Color(white: 0.12)))
+                .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(white: 0.08)))
                 .accessibilityIdentifier(identifier)
         }
     }
@@ -49,17 +49,23 @@ private extension SessionActivityAttributes.ContentState {
         spaceName: "Work",
         taskName: "Deep Work",
         phaseRaw: TimerPhase.running.rawValue,
-        displayStart: Date().addingTimeInterval(-31.42),
+        displayStart: Date().addingTimeInterval(-31),
         isRunning: true,
-        elapsedAtPause: 31.42
+        elapsedAtPause: 31,
+        tintRaw: SpaceTint.orange.rawValue,
+        iconKindRaw: SpaceIconKind.symbol.rawValue,
+        iconValue: SpaceIcon.work.value
     )
 
     static let stoppedPreview = SessionActivityAttributes.ContentState(
         spaceName: "Work",
         taskName: "Deep Work",
         phaseRaw: TimerPhase.stopped.rawValue,
-        displayStart: Date().addingTimeInterval(-31.42),
+        displayStart: Date().addingTimeInterval(-31),
         isRunning: false,
-        elapsedAtPause: 31.42
+        elapsedAtPause: 31,
+        tintRaw: SpaceTint.orange.rawValue,
+        iconKindRaw: SpaceIconKind.symbol.rawValue,
+        iconValue: SpaceIcon.work.value
     )
 }

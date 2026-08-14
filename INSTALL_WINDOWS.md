@@ -27,9 +27,9 @@ USB cable. Trust this computer on the iPhone. Unlock the phone.
 
 ## 6. Download the IPA
 
-GitHub → this repo → Actions → latest green **iOS CI** run → artifact **`ProductivityTracker-iOS-device-unsigned`**.
+GitHub → this repo → Actions → latest green **iOS CI** run → artifact **`conduit-iOS-device-unsigned`**.
 
-Inside: `ProductivityTracker-unsigned.ipa` and `SHA256SUMS.txt`.
+Inside: `conduit-unsigned.ipa` and `SHA256SUMS.txt`. The unsigned bundle inside the IPA is still `Payload/ProductivityTracker.app`; the home screen shows **Conduit**.
 
 Optional helper (no Apple credentials):
 
@@ -41,7 +41,7 @@ powershell -ExecutionPolicy Bypass -File Scripts\windows\fetch-ipa.ps1
 
 1. Open Sideloadly.
 2. Select the iPhone.
-3. Drag `ProductivityTracker-unsigned.ipa` onto Sideloadly.
+3. Drag `conduit-unsigned.ipa` onto Sideloadly.
 4. Enter your Apple Account in Sideloadly (locally). Complete 2FA in Sideloadly/Apple prompts on this PC.
 5. Start. Wait until install finishes.
 
@@ -53,7 +53,7 @@ If iOS blocks launch: Settings → General → VPN & Device Management → your 
 
 ## 12. Launch
 
-Open ProductivityTracker. Grant notifications later, when a distraction reminder is actually useful.
+Open **Conduit** on the home screen. Grant notifications later, when a distraction reminder is actually useful.
 
 ## 13–15. Refresh without deleting data
 

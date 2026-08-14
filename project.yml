@@ -43,7 +43,7 @@ targets:
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) APP_TARGET"
         INFOPLIST_FILE: ProductivityTracker/Resources/Info.plist
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: ProductivityTracker
+        INFOPLIST_KEY_CFBundleDisplayName: Conduit
         INFOPLIST_KEY_LSRequiresIPhoneOS: YES
         INFOPLIST_KEY_NSSupportsLiveActivities: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
@@ -67,6 +67,9 @@ targets:
       - path: ProductivityTrackerLiveActivity
       - path: ProductivityTracker/Timer/ElapsedFormatter.swift
       - path: ProductivityTracker/LiveActivity/LiveActivityPresentation.swift
+      - path: ProductivityTracker/Models/SpaceTint.swift
+      - path: ProductivityTracker/Models/SpaceIcon.swift
+      - path: ProductivityTracker/Views/Spaces/SpaceIconView.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.LiveActivity
@@ -74,7 +77,7 @@ targets:
         PRODUCT_MODULE_NAME: ProductivityTrackerLiveActivity
         INFOPLIST_FILE: ProductivityTrackerLiveActivity/Info.plist
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: ProductivityTracker
+        INFOPLIST_KEY_CFBundleDisplayName: Conduit
         SKIP_INSTALL: YES
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
         TARGETED_DEVICE_FAMILY: "1"

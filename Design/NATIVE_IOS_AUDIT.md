@@ -57,3 +57,28 @@ Useful files (read on GitHub, not imported): NetNewsWire iOS Settings storyboard
 - Native Form/List editing for Spaces and tasks, including rename and reorder.
 - Live Activity redesigned: timer first, one control, space name in ContentState, no pause-on-tap, immediate dismiss on Reset.
 
+## Follow-up — Conduit branding and UX (Aug 2026)
+
+Prior audit conclusions stand (native lists, per-Space engines, Stop/Start/Reset semantics). Subsequent work rebranded the product to **Conduit** on the home screen while keeping bundle ID `com.arahe.ProductivityTracker` and Xcode target names.
+
+**Visual**
+
+- App icon: liquid-glass amber **C** / conduit mark (replaces egg-timer dial).
+- Main canvas: Space tint as a subtle top color wash on black, not half-screen tinted glass cards.
+
+**Navigation**
+
+- Full-page Space paging: timer, controls, and tasks share one page; swipe moves the whole Space.
+- Trailing compose page (Home Screen–style “+” page): name, tasks, color, icon picker (SF Symbols, emoji, monogram).
+
+**Tasks**
+
+- Double-tap and context menu complete / uncomplete tasks.
+- Inline add-task field on each Space page.
+
+**Live Activity**
+
+- Large space-colored name, current task, `Text(timerInterval:showsHours:true)` with `pauseTime` when stopped (no ms, no cross-fade swap).
+- Stop / Start plus Reset controls; large workspace icon; background tint from Space color.
+- Stop still freezes; Start resumes; Reset archives and dismisses the Live Activity immediately.
+

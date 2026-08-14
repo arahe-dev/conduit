@@ -50,10 +50,36 @@ final class SpacePersistenceTests: XCTestCase {
         XCTAssertEqual(controller.spaces.first { $0.name == "Work" }?.tint, .blue)
     }
 
-    func testCreateLoadUpdate() throws {
+    func testDefaultSpaceIconsSeed() throws {
+        let controller = try makeController()
+        XCTAssertEqual(controller.spaces.first { $0.name == "Work" }?.icon, .work)
+        XCTAssertEqual(controller.spaces.first { $0.name == "Chores" }?.icon, .chores)
+        XCTAssertEqual(controller.spaces.first { $0.name == "Personal" }?.icon, .personal)
+        XCTAssertEqual(controller.spaces.first { $0.name == "Work" }?.icon.value, "briefcase.fill")
+        XCTAssertEqual(controller.spaces.first { $0.name == "Chores" }?.icon.value, "house.fill")
+        XCTAssertEqual(controller.spaces.first { $0.name == "Personal" }?.icon.value, "heart.fill")
+    }
+
+    func testSetSpaceIconPersists() throws {
+        let controller = try makeController()
+        let work = controller.spaces.first { $0.name == "Work" }!
+        let custom = SpaceIcon(kind: .emoji, value: "🎯")
+        try controller.setSpaceIcon(work, icon: custom)
+        XCTAssertEqual(controller.spaces.first { $0.id == work.id }?.icon, custom)
+    }
+
+    func testCreateSpaceWithIcon() throws {
+        let controller = try makeController()
+        let space = try controller.createSpace(name: "Studio", tint: .blue, tasks: ["Sketch"], icon: .personal)
+        XCTAssertEqual(space.icon, .personal)
+        XCTAssertEqual(controller.spaces.first { $0.name == "Studio" }?.icon, .personal)
+    }
+
+    func testCreateSpaceDefaultIconCompiles() throws {
         let controller = try makeController()
         let space = try controller.createSpace(name: "Thermodynamics", tint: .indigo, tasks: ["Review", "Problems"])
         XCTAssertEqual(space.tasks.count, 2)
+        XCTAssertEqual(space.icon, .fallback)
         try controller.renameSpace(space, to: "Math")
         XCTAssertTrue(controller.spaces.contains(where: { $0.name == "Math" }))
     }

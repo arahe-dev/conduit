@@ -23,14 +23,19 @@ final class LiveActivityManager: LiveActivityManaging {
             phaseRaw: snapshot.phase.rawValue,
             isRunning: snapshot.isRunning,
             elapsed: snapshot.elapsed(at: now),
-            now: now
+            now: now,
+            tintRaw: space.tintRaw,
+            iconKindRaw: space.iconKindRaw,
+            iconValue: space.iconValue
         )
         let content = ActivityContent(state: state, staleDate: nil)
         let attributes = SessionActivityAttributes(sessionID: sessionID)
-        Task { @MainActor in
-            if let existing = Activity<SessionActivityAttributes>.activities.first {
+        if let existing = Activity<SessionActivityAttributes>.activities.first {
+            Task {
                 await existing.update(content)
-            } else {
+            }
+        } else {
+            Task {
                 _ = try? Activity.request(attributes: attributes, content: content)
             }
         }
@@ -63,7 +68,10 @@ final class NullLiveActivityManager: LiveActivityManaging {
             phaseRaw: snapshot.phase.rawValue,
             isRunning: snapshot.isRunning,
             elapsed: snapshot.elapsed(at: now),
-            now: now
+            now: now,
+            tintRaw: space.tintRaw,
+            iconKindRaw: space.iconKindRaw,
+            iconValue: space.iconValue
         )
         lastState = state
         states.append(state)

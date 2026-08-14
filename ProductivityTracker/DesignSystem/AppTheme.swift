@@ -14,6 +14,10 @@ enum AccessibilityIDs {
     static let glassSurface = "glass-surface"
     static let spaceEditor = "space-editor"
     static let liveActivityPreview = "live-activity-preview"
+    static let addSpacePage = "add-space-page"
+    static let addTaskInline = "add-task-inline"
+    static let createSpaceButton = "create-space-button"
+    static let spacePager = "space-pager"
 }
 
 enum LayoutMetrics {

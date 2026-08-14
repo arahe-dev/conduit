@@ -28,7 +28,8 @@ enum DemoDataSeeder {
             name: "Work",
             tint: .orange,
             displayOrder: 0,
-            focusKeyword: "Work"
+            focusKeyword: "Work",
+            icon: .work
         )
         work.tasks = [
             TaskItem(id: DemoIDs.deepWork, name: "Deep Work", displayOrder: 0, space: work),
@@ -42,7 +43,8 @@ enum DemoDataSeeder {
             name: "Chores",
             tint: .teal,
             displayOrder: 1,
-            focusKeyword: "Personal"
+            focusKeyword: "Personal",
+            icon: .chores
         )
         chores.tasks = [
             TaskItem(name: "Kitchen", displayOrder: 0, space: chores),
@@ -54,7 +56,8 @@ enum DemoDataSeeder {
             id: DemoIDs.personal,
             name: "Personal",
             tint: .purple,
-            displayOrder: 2
+            displayOrder: 2,
+            icon: .personal
         )
         personal.tasks = [
             TaskItem(name: "Reading", displayOrder: 0, space: personal),

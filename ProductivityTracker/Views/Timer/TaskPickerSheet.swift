@@ -6,7 +6,7 @@ struct TaskPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            List(controller.selectedTasks, id: \.id) { task in
+            List(controller.selectedSpace?.timingTasksSorted ?? [], id: \.id) { task in
                 Button {
                     try? controller.selectTask(task)
                     isPresented = false

@@ -15,17 +15,27 @@ struct TaskRow: View {
                 .frame(width: 6, height: 6)
             Text(task.name)
                 .font(.body)
-                .foregroundStyle(isActive ? .primary : .secondary)
+                .foregroundStyle(task.isCompleted ? Color.secondary : (isActive ? Color.primary : Color.secondary))
+                .strikethrough(task.isCompleted, color: .secondary)
                 .lineLimit(1)
             Spacer()
             elapsedLabel
         }
         .padding(.horizontal, 4)
         .frame(minHeight: 48)
+        .opacity(task.isCompleted ? 0.55 : 1)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(task.name), \(ElapsedFormatter.stopwatch(elapsed(at: Date())))")
+        .accessibilityLabel(accessibilityName)
         .accessibilityAddTraits(isActive ? .isSelected : [])
         .accessibilityIdentifier("task-row-\(task.name)")
+    }
+
+    private var accessibilityName: String {
+        let elapsed = ElapsedFormatter.stopwatch(elapsed(at: Date()))
+        if task.isCompleted {
+            return "\(task.name), completed, \(elapsed)"
+        }
+        return "\(task.name), \(elapsed)"
     }
 
     @ViewBuilder

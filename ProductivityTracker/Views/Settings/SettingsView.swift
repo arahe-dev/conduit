@@ -45,7 +45,7 @@ struct SettingsView: View {
                     }
                 }
                 Section("About") {
-                    LabeledContent("App", value: "ProductivityTracker")
+                    LabeledContent("App", value: "Conduit")
                     LabeledContent("Version", value: "0.1.0")
                     Text("Local timer. No account, no network, no analytics.")
                         .font(.footnote)

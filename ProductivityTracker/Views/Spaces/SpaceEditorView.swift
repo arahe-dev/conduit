@@ -22,6 +22,13 @@ struct SpaceEditorView: View {
                 TextField("Space", text: $name)
                     .onSubmit { try? controller.renameSpace(space, to: name) }
             }
+            Section("Icon") {
+                SpaceIconPicker(
+                    icon: iconBinding,
+                    name: name,
+                    tint: space.tint.color
+                )
+            }
             Section("Accent") {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 36))]) {
                     ForEach(SpaceTint.allCases) { tint in
@@ -107,6 +114,13 @@ struct SpaceEditorView: View {
             try? controller.renameSpace(space, to: name)
             try? controller.setFocusKeyword(focusKeyword, for: space)
         }
+    }
+
+    private var iconBinding: Binding<SpaceIcon> {
+        Binding(
+            get: { space.icon },
+            set: { try? controller.setSpaceIcon(space, icon: $0) }
+        )
     }
 
     private var defaultTaskBinding: Binding<UUID?> {

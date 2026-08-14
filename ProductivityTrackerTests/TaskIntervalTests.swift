@@ -158,6 +158,43 @@ final class TaskIntervalTests: XCTestCase {
         try controller.setTaskEnabled(space.allTasksSorted[0], isEnabled: false)
         XCTAssertEqual(controller.selectedTasks.map(\.name), ["Email", "Focus"])
     }
+
+    func testCompletingActiveRunningTaskMovesToNextIncompleteTask() throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 1000))
+        let controller = try makeController(time: time)
+        try controller.start()
+        let deep = controller.selectedTasks.first { $0.name == "Deep Work" }!
+        try controller.setTaskCompleted(deep, isCompleted: true)
+        XCTAssertEqual(controller.activeTask?.name, "Research")
+        let open = try controller.allSessions().first?.intervals.filter(\.isOpen) ?? []
+        XCTAssertEqual(open.count, 1)
+        XCTAssertEqual(open.first?.task?.name, "Research")
+    }
+
+    func testCompletedTasksAreNotSelectableForTiming() throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 1000))
+        let controller = try makeController(time: time)
+        let deep = controller.selectedTasks.first { $0.name == "Deep Work" }!
+        let research = controller.selectedTasks.first { $0.name == "Research" }!
+        try controller.setTaskCompleted(deep, isCompleted: true)
+        try controller.selectTask(deep)
+        XCTAssertNotEqual(controller.snapshot.currentTaskID, deep.id)
+        XCTAssertEqual(controller.snapshot.currentTaskID, research.id)
+        try controller.start()
+        XCTAssertEqual(controller.activeTask?.name, "Research")
+    }
+
+    func testUncompletingTaskRestoresTimingAvailability() throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 1000))
+        let controller = try makeController(time: time)
+        let deep = controller.selectedTasks.first { $0.name == "Deep Work" }!
+        try controller.setTaskCompleted(deep, isCompleted: true)
+        try controller.setTaskCompleted(deep, isCompleted: false)
+        try controller.start()
+        try controller.selectTask(deep)
+        XCTAssertEqual(controller.activeTask?.name, "Deep Work")
+        XCTAssertTrue(deep.isCompleted == false)
+    }
 }
 
 private extension SessionController {

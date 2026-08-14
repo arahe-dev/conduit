@@ -1,5 +1,6 @@
 import Foundation
 import ActivityKit
+import SwiftUI
 
 struct SessionActivityAttributes: ActivityAttributes, Sendable {
     var sessionID: UUID
@@ -11,6 +12,9 @@ struct SessionActivityAttributes: ActivityAttributes, Sendable {
         var displayStart: Date
         var isRunning: Bool
         var elapsedAtPause: TimeInterval
+        var tintRaw: String
+        var iconKindRaw: String
+        var iconValue: String
     }
 }
 
@@ -38,7 +42,10 @@ enum LiveActivityPresentation {
         phaseRaw: String,
         isRunning: Bool,
         elapsed: TimeInterval,
-        now: Date
+        now: Date,
+        tintRaw: String = SpaceTint.orange.rawValue,
+        iconKindRaw: String = SpaceIconKind.symbol.rawValue,
+        iconValue: String = SpaceIcon.work.value
     ) -> SessionActivityAttributes.ContentState {
         SessionActivityAttributes.ContentState(
             spaceName: spaceName,
@@ -46,7 +53,28 @@ enum LiveActivityPresentation {
             phaseRaw: phaseRaw,
             displayStart: now.addingTimeInterval(-elapsed),
             isRunning: isRunning,
-            elapsedAtPause: elapsed
+            elapsedAtPause: elapsed,
+            tintRaw: tintRaw,
+            iconKindRaw: iconKindRaw,
+            iconValue: iconValue
         )
+    }
+}
+
+extension SessionActivityAttributes.ContentState {
+    var tint: Color {
+        (SpaceTint.parse(tintRaw) ?? .orange).color
+    }
+
+    var icon: SpaceIcon {
+        SpaceIcon(kind: SpaceIconKind(rawValue: iconKindRaw) ?? .symbol, value: iconValue)
+    }
+
+    var pauseTime: Date? {
+        isRunning ? nil : displayStart.addingTimeInterval(elapsedAtPause)
+    }
+
+    var timerRange: ClosedRange<Date> {
+        displayStart...displayStart.addingTimeInterval(60 * 60 * 24 * 14)
     }
 }

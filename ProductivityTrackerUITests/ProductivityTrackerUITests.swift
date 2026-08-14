@@ -14,28 +14,63 @@ final class ProductivityTrackerUITests: XCTestCase {
         let space = app.descendants(matching: .any)["space-name"].firstMatch
         XCTAssertTrue(space.waitForExistence(timeout: 10))
         XCTAssertEqual(space.label, "Work")
+        XCTAssertTrue(app.descendants(matching: .any)["space-pager"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["timer-card"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["task-panel"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["start-stop-button"].firstMatch.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.descendants(matching: .any)["lap-button"].firstMatch.exists)
-        XCTAssertFalse(app.descendants(matching: .any)["lap-button"].firstMatch.isEnabled)
+        let lap = app.descendants(matching: .any)["lap-button"].firstMatch
+        XCTAssertTrue(lap.exists)
+        XCTAssertFalse(lap.isEnabled)
         XCTAssertFalse(app.descendants(matching: .any)["glass-surface"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["stopwatch-display"].waitForExistence(timeout: 2))
     }
 
-    func testUpperSwipeChangesSpaceAndLowerSwipeDoesNot() {
+    func testSwipeTimerOrTaskPanelChangesSpace() {
         let space = app.descendants(matching: .any)["space-name"].firstMatch
         XCTAssertTrue(space.waitForExistence(timeout: 10))
-        let original = space.label
+        XCTAssertEqual(space.label, "Work")
+        XCTAssertTrue(app.descendants(matching: .any)["space-pager"].firstMatch.waitForExistence(timeout: 5))
+
         let card = app.descendants(matching: .any)["timer-card"].firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         swipe(element: card, from: 0.85, to: 0.15)
         XCTAssertTrue(space.waitForExistence(timeout: 2))
-        let afterUpper = space.label
-        XCTAssertNotEqual(afterUpper, original)
+        XCTAssertEqual(space.label, "Chores")
+        XCTAssertTrue(app.descendants(matching: .any)["stopwatch-display-idle"].firstMatch.exists)
 
-        let panel = app.descendants(matching: .any)["task-panel"]
+        let panel = app.descendants(matching: .any)["task-panel"].firstMatch
+        XCTAssertTrue(panel.waitForExistence(timeout: 2))
         swipe(element: panel, from: 0.85, to: 0.15)
-        XCTAssertEqual(space.label, afterUpper)
+        XCTAssertEqual(space.label, "Personal")
+    }
+
+    func testSwipePastLastSpaceShowsAddSpacePage() {
+        XCTAssertTrue(app.descendants(matching: .any)["space-pager"].firstMatch.waitForExistence(timeout: 5))
+        let card = app.descendants(matching: .any)["timer-card"].firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        swipe(element: card, from: 0.85, to: 0.15)
+        swipe(element: card, from: 0.85, to: 0.15)
+        swipe(element: card, from: 0.85, to: 0.15)
+        XCTAssertTrue(app.descendants(matching: .any)["add-space-page"].firstMatch.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.descendants(matching: .any)["create-space-button"].firstMatch.exists)
+    }
+
+    func testInlineAddTask() {
+        let inline = app.descendants(matching: .any)["add-task-inline"].firstMatch
+        XCTAssertTrue(inline.waitForExistence(timeout: 5))
+        inline.tap()
+        inline.typeText("New Task")
+        app.descendants(matching: .any)["add-task-empty"].firstMatch.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["task-row-New Task"].firstMatch.waitForExistence(timeout: 3))
+    }
+
+    func testDoubleTapTaskTogglesCompletion() {
+        let deep = app.descendants(matching: .any)["task-row-Deep Work"].firstMatch
+        XCTAssertTrue(deep.waitForExistence(timeout: 5))
+        deep.doubleTap()
+        XCTAssertTrue(deep.label.lowercased().contains("completed"))
+        deep.doubleTap()
+        XCTAssertFalse(deep.label.lowercased().contains("completed"))
     }
 
     private func control(_ identifier: String) -> XCUIElement {
@@ -185,6 +220,16 @@ final class ScreenshotUITests: XCTestCase {
         save(XCUIScreen.main.screenshot(), name: "08-history", directory: screenshotDir)
         settingsApp.terminate()
 
+        let addSpaceApp = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-ScreenshotMode", "-TimerState", "idle"])
+        let pagerCard = addSpaceApp.descendants(matching: .any)["timer-card"].firstMatch
+        XCTAssertTrue(pagerCard.waitForExistence(timeout: 5))
+        swipe(element: pagerCard, from: 0.85, to: 0.15)
+        swipe(element: pagerCard, from: 0.85, to: 0.15)
+        swipe(element: pagerCard, from: 0.85, to: 0.15)
+        XCTAssertTrue(addSpaceApp.descendants(matching: .any)["add-space-page"].firstMatch.waitForExistence(timeout: 3))
+        save(addSpaceApp.screenshot(), name: "10-add-space", directory: screenshotDir)
+        addSpaceApp.terminate()
+
         let live = launch(arguments: ["-UITests", "-ResetStore", "-InMemoryStore", "-LiveActivityPreview"])
         XCTAssertTrue(live.descendants(matching: .any)["live-activity-preview"].firstMatch.waitForExistence(timeout: 5))
         save(live.screenshot(), name: "09-live-activity-previews", directory: screenshotDir)
@@ -214,5 +259,11 @@ final class ScreenshotUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func swipe(element: XCUIElement, from startX: CGFloat, to endX: CGFloat) {
+        let start = element.coordinate(withNormalizedOffset: CGVector(dx: startX, dy: 0.5))
+        let end = element.coordinate(withNormalizedOffset: CGVector(dx: endX, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: end)
     }
 }

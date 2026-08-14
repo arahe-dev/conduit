@@ -7,10 +7,10 @@ rm -rf "$OUT_DIR/Payload/"*
 cp -R "$APP_PATH" "$OUT_DIR/Payload/ProductivityTracker.app"
 (
   cd "$OUT_DIR"
-  rm -f ProductivityTracker-unsigned.ipa
-  zip -qry ProductivityTracker-unsigned.ipa Payload
+  rm -f conduit-unsigned.ipa ProductivityTracker-unsigned.ipa
+  zip -qry conduit-unsigned.ipa Payload
 )
-python3 - <<'PY' "$OUT_DIR/ProductivityTracker-unsigned.ipa" "$OUT_DIR/SHA256SUMS.txt"
+python3 - <<'PY' "$OUT_DIR/conduit-unsigned.ipa" "$OUT_DIR/SHA256SUMS.txt"
 import hashlib, sys
 from pathlib import Path
 ipa = Path(sys.argv[1])
@@ -18,7 +18,7 @@ digest = hashlib.sha256(ipa.read_bytes()).hexdigest()
 Path(sys.argv[2]).write_text(f"{digest}  {ipa.name}\n")
 print(digest)
 PY
-python3 - <<'PY' "$OUT_DIR/ProductivityTracker-unsigned.ipa"
+python3 - <<'PY' "$OUT_DIR/conduit-unsigned.ipa"
 import sys, zipfile
 from pathlib import Path
 ipa = Path(sys.argv[1])

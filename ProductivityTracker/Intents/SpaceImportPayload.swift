@@ -60,7 +60,10 @@ struct SpaceImportPayload: Equatable, Sendable {
 
         let color: SpaceTint
         if let rawColor = dictionary["color"] as? String {
-            color = try SpaceTint.parse(rawColor)
+            guard let parsed = SpaceTint.parse(rawColor) else {
+                throw SpaceImportError.invalidColor(rawColor)
+            }
+            color = parsed
         } else {
             color = .blue
         }

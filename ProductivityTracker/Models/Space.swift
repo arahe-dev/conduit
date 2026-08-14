@@ -11,6 +11,8 @@ final class Space {
     var distractionTimeoutSeconds: Double
     var focusKeyword: String?
     var defaultTaskID: UUID?
+    var iconKindRaw: String = SpaceIconKind.symbol.rawValue
+    var iconValue: String = "square.grid.2x2.fill"
 
     @Relationship(deleteRule: .cascade, inverse: \TaskItem.space)
     var tasks: [TaskItem]
@@ -27,6 +29,7 @@ final class Space {
         distractionTimeoutSeconds: Double = 300,
         focusKeyword: String? = nil,
         defaultTaskID: UUID? = nil,
+        icon: SpaceIcon = .fallback,
         tasks: [TaskItem] = [],
         sessions: [Session] = []
     ) {
@@ -38,6 +41,8 @@ final class Space {
         self.distractionTimeoutSeconds = distractionTimeoutSeconds
         self.focusKeyword = focusKeyword
         self.defaultTaskID = defaultTaskID
+        self.iconKindRaw = icon.kind.rawValue
+        self.iconValue = icon.value
         self.tasks = tasks
         self.sessions = sessions
     }
@@ -47,10 +52,28 @@ final class Space {
         set { tintRaw = newValue.rawValue }
     }
 
+    var icon: SpaceIcon {
+        get {
+            let kind = SpaceIconKind(rawValue: iconKindRaw) ?? .symbol
+            let value = iconValue.isEmpty ? SpaceIcon.fallback.value : iconValue
+            return SpaceIcon(kind: kind, value: value)
+        }
+        set {
+            iconKindRaw = newValue.kind.rawValue
+            iconValue = newValue.value
+        }
+    }
+
     var remindersEnabled: Bool { distractionTimeoutSeconds > 0 }
 
     var enabledTasksSorted: [TaskItem] {
         tasks.filter(\.isEnabled).sorted { $0.displayOrder < $1.displayOrder }
+    }
+
+    var timingTasksSorted: [TaskItem] {
+        tasks
+            .filter { $0.isEnabled && !$0.isCompleted }
+            .sorted { $0.displayOrder < $1.displayOrder }
     }
 
     var allTasksSorted: [TaskItem] {

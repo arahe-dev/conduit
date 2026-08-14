@@ -30,8 +30,8 @@ Truth never depends on frame count.
 
 SwiftData models:
 
-- `Space` — name, accent, order, reminder seconds (`0` = Off), Focus keyword, default task
-- `TaskItem` — name, order, enabled
+- `Space` — name, accent, order, reminder seconds (`0` = Off), Focus keyword, default task, icon (SF Symbol, emoji, or monogram)
+- `TaskItem` — name, order, enabled, completed
 - `Session` — space, start, optional `endedAt` (nil = current/resumable), phase, accumulated, active task
 - `TaskInterval` — session, task, start, optional end
 
@@ -43,13 +43,37 @@ Start opens an interval for the selected / default / first enabled task. Direct 
 
 Task-row totals are the current stopwatch session only. They clear on Reset. History keeps archived totals.
 
+## Task list interaction
+
+Each Space page includes its task list on the same full-page canvas (not a separate lower card region).
+
+- Single tap selects the task for timing while running.
+- Double-tap toggles complete / incomplete.
+- Context menu: Complete / Mark Incomplete, Rename, Enable / Disable, Delete.
+- Inline **Add a task** field at the bottom of the list.
+
 ## Space paging
 
-A page-style `TabView` lives only in the upper stopwatch region. The task list is a sibling. Swiping a Space does not move elapsed time onto the newly visible Space. Starting Space B while A is running freezes A, then starts or resumes B.
+A page-style `TabView` fills the screen. Each page is one Space: header (icon + name), stopwatch, Lap/Start/Stop/Reset controls, page dots, and tasks together. Swiping a Space does not move elapsed time onto the newly visible Space. Starting Space B while A is running freezes A, then starts or resumes B.
+
+A trailing **New Space** page (Apple Home Screen–style extra page) lets you compose a Space before it exists: name, initial tasks, accent color, and icon (SF Symbols, emoji, or monogram from the name). Creating it selects that Space and returns to its page.
+
+Space tint is a top-to-bottom color wash on black, not giant tinted glass cards.
 
 ## Live Activity
 
-`SessionActivityAttributes.ContentState` carries space name, task, running flag, and elapsed. Lock Screen is timer-first with one explicit Stop or Start control. Default activity taps do not mutate the timer (`LiveActivityPresentation.backgroundMutatesTimer == false`). Stop updates the activity as frozen. Reset dismisses with `.immediate`.
+`SessionActivityAttributes.ContentState` carries space name, current task, running flag, elapsed, tint, and workspace icon.
+
+Lock Screen layout:
+
+- Large space-colored **space name**
+- Current task subtitle
+- Elapsed via `Text(timerInterval:countsDown:false, showsHours:true)` with `pauseTime` when stopped — hours/minutes/seconds only (no milliseconds, no fade swap between views)
+- Explicit **Stop** or **Start** plus **Reset** (`xmark`) controls via Live Activity intents (`openAppWhenRun = false`)
+- Large workspace icon on the trailing edge
+- Background tint from the Space color (`activityBackgroundTint`)
+
+Default activity taps do not mutate the timer (`LiveActivityPresentation.backgroundMutatesTimer == false`). Stop updates the activity as frozen. Reset dismisses with `.immediate`.
 
 ## App Intents
 
@@ -66,8 +90,8 @@ Intents call `AppRuntime.shared.sessionController`. Pause intents freeze like St
 - Task interval and editing tests
 - Per-Space ownership tests
 - Live Activity state tests
-- UI tests: paging isolation, labels, long-press Lap, screenshots, Live Activity preview canvas
+- UI tests: full-page paging isolation, labels, long-press Lap, compose page, screenshots, Live Activity preview canvas
 
 ## CI architecture
 
-Linux agent never runs Xcode. `.github/workflows/ios-ci.yml` on `macos-26` generates the Xcode project, tests, packages `ProductivityTracker-unsigned.ipa`, and uploads `ProductivityTracker-iOS-device-unsigned`.
+Linux agent never runs Xcode. `.github/workflows/ios-ci.yml` on `macos-26` generates the Xcode project, tests, packages `conduit-unsigned.ipa` (`Payload/ProductivityTracker.app` inside), and uploads `conduit-iOS-device-unsigned`.

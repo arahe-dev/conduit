@@ -44,6 +44,10 @@ final class SessionController {
         selectedSpace?.enabledTasksSorted ?? []
     }
 
+    func displayedTasks(in space: Space) -> [TaskItem] {
+        space.enabledTasksSorted
+    }
+
     var runningSpaceID: UUID? {
         spaces.map(\.id).first { snapshots[$0]?.phase == .running }
     }
@@ -114,6 +118,9 @@ final class SessionController {
         if haptic {
             Haptics.spaceChange()
         }
+        if runningSpaceID != nil || snapshots.values.contains(where: { $0.phase == .stopped }) {
+            liveActivity.startOrUpdate(from: self, at: timeSource.now())
+        }
         noteChange()
     }
 
@@ -174,9 +181,13 @@ final class SessionController {
     }
 
     func stop() throws {
-        guard let spaceID = selectedSpaceID else { throw SessionControllerError.noSpace }
+        guard let space = selectedSpace else { throw SessionControllerError.noSpace }
+        try stop(in: space)
+    }
+
+    func stop(in space: Space) throws {
         let now = timeSource.now()
-        try freezeSpace(spaceID, at: now, haptic: true)
+        try freezeSpace(space.id, at: now, haptic: true)
         liveActivity.startOrUpdate(from: self, at: now)
         try context.save()
         noteChange()
@@ -192,6 +203,13 @@ final class SessionController {
 
     func reset() throws {
         guard let space = selectedSpace else { throw SessionControllerError.noSpace }
+        try reset(in: space)
+    }
+
+    func reset(in space: Space) throws {
+        if selectedSpaceID != space.id {
+            selectSpace(space.id)
+        }
         let engine = engine(for: space.id)
         guard engine.snapshot.phase == .stopped else { return }
         let now = timeSource.now()
@@ -218,9 +236,16 @@ final class SessionController {
 
     func lap() throws {
         guard let space = selectedSpace else { throw SessionControllerError.noSpace }
+        try lap(in: space)
+    }
+
+    func lap(in space: Space) throws {
+        if selectedSpaceID != space.id {
+            selectSpace(space.id)
+        }
         let engine = engine(for: space.id)
         guard engine.snapshot.phase == .running else { throw SessionControllerError.noActiveSession }
-        let tasks = space.enabledTasksSorted
+        let tasks = space.timingTasksSorted
         guard !tasks.isEmpty else { throw SessionControllerError.noEnabledTasks }
         let now = timeSource.now()
         try closeOpenIntervals(sessionID: engine.snapshot.sessionID, at: now)
@@ -238,6 +263,7 @@ final class SessionController {
     }
 
     func selectTask(_ task: TaskItem) throws {
+        guard task.isEnabled, !task.isCompleted else { return }
         guard let space = task.space ?? selectedSpace else { throw SessionControllerError.noSpace }
         if selectedSpaceID != space.id {
             selectSpace(space.id)
@@ -306,10 +332,10 @@ final class SessionController {
         return total
     }
 
-    func createSpace(name: String, tint: SpaceTint, tasks: [String]) throws -> Space {
+    func createSpace(name: String, tint: SpaceTint, tasks: [String], icon: SpaceIcon = .fallback) throws -> Space {
         try reloadSpaces()
         let order = (spaces.map(\.displayOrder).max() ?? -1) + 1
-        let space = Space(name: name, tint: tint, displayOrder: order)
+        let space = Space(name: name, tint: tint, displayOrder: order, icon: icon)
         let items = tasks.enumerated().map { index, taskName in
             TaskItem(name: taskName, displayOrder: index, space: space)
         }
@@ -322,7 +348,7 @@ final class SessionController {
     }
 
     func importSpace(_ payload: SpaceImportPayload) throws -> Space {
-        try createSpace(name: payload.name, tint: payload.color, tasks: payload.tasks)
+        try createSpace(name: payload.name, tint: payload.color, tasks: payload.tasks, icon: .monogram(from: payload.name))
     }
 
     func renameSpace(_ space: Space, to name: String) throws {
@@ -336,13 +362,21 @@ final class SessionController {
         space.tint = tint
         try context.save()
         try reloadSpaces()
+        liveActivity.startOrUpdate(from: self, at: timeSource.now())
+    }
+
+    func setSpaceIcon(_ space: Space, icon: SpaceIcon) throws {
+        space.icon = icon
+        try context.save()
+        try reloadSpaces()
+        liveActivity.startOrUpdate(from: self, at: timeSource.now())
     }
 
     func setDefaultTask(_ task: TaskItem?, for space: Space) throws {
         space.defaultTaskID = task?.id
         let engine = engine(for: space.id)
         if engine.snapshot.isIdle {
-            engine.selectTask(task?.id ?? space.enabledTasksSorted.first?.id)
+            engine.selectTask(task?.id ?? space.timingTasksSorted.first?.id)
             publish(engine)
         }
         try context.save()
@@ -406,11 +440,22 @@ final class SessionController {
 
     func setTaskEnabled(_ task: TaskItem, isEnabled: Bool) throws {
         task.isEnabled = isEnabled
-        if !isEnabled, snapshot.currentTaskID == task.id {
+        if !isEnabled, snapshot(for: task.space?.id ?? selectedSpaceID ?? DemoIDs.work).currentTaskID == task.id {
             try handleRemovedActiveTask(task)
         }
         try context.save()
         try reloadSpaces()
+    }
+
+    func setTaskCompleted(_ task: TaskItem, isCompleted: Bool) throws {
+        task.isCompleted = isCompleted
+        if isCompleted, snapshot(for: task.space?.id ?? selectedSpaceID ?? DemoIDs.work).currentTaskID == task.id {
+            try handleRemovedActiveTask(task)
+        }
+        try context.save()
+        try reloadSpaces()
+        liveActivity.startOrUpdate(from: self, at: timeSource.now())
+        noteChange()
     }
 
     func moveTasks(in space: Space, from source: IndexSet, to destination: Int) throws {
@@ -478,6 +523,26 @@ final class SessionController {
         try allSessions().filter { $0.endedAt != nil }
     }
 
+    func startFromLiveActivity() throws {
+        guard let space = liveActivitySpace() else { throw SessionControllerError.noSpace }
+        try start(in: space)
+    }
+
+    func stopFromLiveActivity() throws {
+        guard let space = liveActivitySpace() else { throw SessionControllerError.noSpace }
+        try stop(in: space)
+    }
+
+    func resetFromLiveActivity() throws {
+        guard let space = liveActivitySpace() else { throw SessionControllerError.noSpace }
+        try reset(in: space)
+    }
+
+    func lapFromLiveActivity() throws {
+        guard let space = liveActivitySpace() else { throw SessionControllerError.noSpace }
+        try lap(in: space)
+    }
+
     func liveActivitySpace() -> Space? {
         if let id = runningSpaceID {
             return spaces.first { $0.id == id }
@@ -515,7 +580,7 @@ final class SessionController {
             return
         }
         let taskID = engine.snapshot.currentTaskID
-        let task = taskID.flatMap { id in space.tasks.first { $0.id == id && $0.isEnabled } }
+        let task = taskID.flatMap { id in space.timingTasksSorted.first { $0.id == id } }
         engine.start(now: now, sessionID: session.id)
         session.phase = .running
         session.currentSegmentStartedAt = now
@@ -550,7 +615,7 @@ final class SessionController {
         guard let space = task.space else { return }
         let engine = engine(for: space.id)
         let now = timeSource.now()
-        let remaining = space.enabledTasksSorted.filter { $0.id != task.id }
+        let remaining = space.timingTasksSorted.filter { $0.id != task.id }
         let next = remaining.first
         if engine.snapshot.phase == .running {
             try closeOpenIntervals(sessionID: engine.snapshot.sessionID, at: now)
@@ -569,7 +634,7 @@ final class SessionController {
     }
 
     private func initialTask(in space: Space, engine: TimerEngine) -> TaskItem? {
-        let enabled = space.enabledTasksSorted
+        let enabled = space.timingTasksSorted
         if let current = engine.snapshot.currentTaskID,
            let match = enabled.first(where: { $0.id == current }) {
             return match
@@ -583,10 +648,10 @@ final class SessionController {
 
     private func preferredTaskID(in space: Space) -> UUID? {
         if let defaultID = space.defaultTaskID,
-           space.enabledTasksSorted.contains(where: { $0.id == defaultID }) {
+           space.timingTasksSorted.contains(where: { $0.id == defaultID }) {
             return defaultID
         }
-        return space.enabledTasksSorted.first?.id
+        return space.timingTasksSorted.first?.id
     }
 
     private func session(id: UUID?) -> Session? {

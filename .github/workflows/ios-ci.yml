@@ -120,7 +120,7 @@ jobs:
             echo "simulator_name=${SIM_NAME}"
             echo "simulator_os=${SIM_OS}"
             echo "simulator_udid=${SIM_UDID}"
-            echo "ipa=ProductivityTracker-unsigned.ipa"
+            echo "ipa=conduit-unsigned.ipa"
             echo "sha256=$(cut -d ' ' -f1 "$ARTIFACT_DIR/SHA256SUMS.txt")"
             echo "UNSIGNED=must be signed with your own Apple Account before installation"
           } | tee "$ARTIFACT_DIR/build-metadata.txt"
@@ -128,11 +128,11 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ProductivityTracker-iOS-device-unsigned
+          name: conduit-iOS-device-unsigned
           if-no-files-found: error
           retention-days: 30
           path: |
-            artifacts/ProductivityTracker-unsigned.ipa
+            artifacts/conduit-unsigned.ipa
             artifacts/SHA256SUMS.txt
             artifacts/build-metadata.txt
             artifacts/screenshots

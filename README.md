@@ -1,6 +1,8 @@
-# ProductivityTracker
+# Conduit
 
 Private, local iPhone stopwatch for timing work across Spaces and tasks.
+
+Home screen name: **Conduit**. Bundle ID remains `com.arahe.ProductivityTracker` (Xcode target and `.app` payload names are unchanged).
 
 The product is the timer. Spaces, tasks, history, Live Activities, Shortcuts, and notifications exist only to keep that timer useful.
 
@@ -40,7 +42,7 @@ The day-to-day environment is Windows + Cursor Cloud (Linux). The Xcode project 
 1. Edit Swift sources and `project.yml` on the Linux cloud agent or Windows.
 2. Commit and push.
 3. GitHub Actions on `macos-26` generates the Xcode project, compiles, tests, captures screenshots, and packages an unsigned IPA.
-4. Download `ProductivityTracker-iOS-device-unsigned`.
+4. Download `conduit-iOS-device-unsigned`.
 5. Sign and install locally on Windows. See [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md).
 
 This repository never uses a Mac owned by the app user. CI is the Xcode machine.
@@ -61,11 +63,11 @@ bash Scripts/ci/package-ipa.sh "$APP" artifacts
 ## Artifacts
 
 Workflow: `.github/workflows/ios-ci.yml`  
-Artifact name: `ProductivityTracker-iOS-device-unsigned`
+Artifact name: `conduit-iOS-device-unsigned`
 
 Contains:
 
-- `ProductivityTracker-unsigned.ipa` — **UNSIGNED — must be signed with your own Apple Account before installation**
+- `conduit-unsigned.ipa` — **UNSIGNED — must be signed with your own Apple Account before installation** (`.app` inside: `Payload/ProductivityTracker.app`)
 - `SHA256SUMS.txt`
 - `build-metadata.txt`
 - simulator screenshots
@@ -78,7 +80,7 @@ A free Apple Account can sign the IPA locally (Sideloadly). Apps expire after 7 
 ## Testing
 
 - Unit tests cover Apple Stopwatch semantics, per-Space ownership, task editing, Live Activity state, persistence, notifications, and JSON import.
-- UI tests cover Start/Stop/Reset labels, upper-only Space paging, long-press Lap without advancing, Space editor, and screenshot/Live Activity preview canvases (`-ScreenshotMode`, `-TimerState`, `-LiveActivityPreview`).
+- UI tests cover Start/Stop/Reset labels, full-page Space paging (including the trailing compose page), long-press Lap without advancing, Space editor, and screenshot/Live Activity preview canvases (`-ScreenshotMode`, `-TimerState`, `-LiveActivityPreview`).
 
 ## Screenshots
 
@@ -86,7 +88,7 @@ CI writes PNGs under `artifacts/screenshots` when `SCREENSHOT_DIR` is set. After
 
 ## Known limitations
 
-- Live Activity explicit Stop/Start controls use Live Activity intents with `openAppWhenRun = false`. A normal tap on the activity surface is intended only to open the app; it must not pause or resume. Physical Lock Screen routing still needs a real iPhone.
+- Live Activity explicit Stop/Start/Reset controls use Live Activity intents with `openAppWhenRun = false`. A normal tap on the activity surface is intended only to open the app; it must not pause or resume. Physical Lock Screen routing still needs a real iPhone.
 - Distraction detection is a Shortcuts approximation (`Distraction Started` / `Distraction Ended`), not Screen Time / FamilyControls.
 - The app cannot force system Focus on. A Focus Filter can select a Space when a Focus you configured becomes active.
 - Unsigned CI artifacts cannot be installed until you sign them with your Apple Account on your computer.
@@ -94,4 +96,4 @@ CI writes PNGs under `artifacts/screenshots` when `SCREENSHOT_DIR` is set. After
 
 ## Visual references
 
-The original annotated concept images were not in the git clone. See `Design/references/README.md`.
+The original annotated concept images were not in the git clone. See `Design/references/README.md`. App icon: liquid-glass amber **C** / conduit mark (not the earlier egg-timer dial).

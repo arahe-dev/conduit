@@ -13,9 +13,7 @@ struct SpaceListView: View {
                     SpaceEditorView(controller: controller, space: space)
                 } label: {
                     HStack(spacing: 10) {
-                        Circle()
-                            .fill(space.tint.color)
-                            .frame(width: 10, height: 10)
+                        SpaceIconView(icon: space.icon, tint: space.tint.color, pointSize: 28)
                         Text(space.name)
                     }
                 }

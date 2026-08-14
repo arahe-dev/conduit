@@ -3,56 +3,82 @@ import SwiftUI
 struct TimerScreen: View {
     @Bindable var controller: SessionController
     @Binding var showSettings: Bool
+    @State private var page: SpacePagerPage = .space(DemoIDs.work)
     @State private var showTaskPicker = false
     @State private var renamingTask: TaskItem?
     @State private var renameText = ""
+    @State private var editingSpace: Space?
 
     var body: some View {
-        GeometryReader { proxy in
-            let upper = proxy.size.height * LayoutMetrics.upperFraction
-            ZStack(alignment: .topTrailing) {
-                Color.black.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    spacePager
-                        .frame(height: upper)
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier(AccessibilityIDs.timerCard)
-                    TaskPanel(
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            TabView(selection: pageBinding) {
+                ForEach(controller.spaces, id: \.id) { space in
+                    SpacePage(
                         controller: controller,
-                        onRename: { task in
+                        space: space,
+                        isActivePage: isActive(space.id),
+                        pageIndex: pageIndex(for: .space(space.id)),
+                        pageCount: pageCount,
+                        onLongPressLap: { showTaskPicker = true },
+                        onRenameTask: { task in
                             renamingTask = task
                             renameText = task.name
-                        }
+                        },
+                        onEditSpace: { editingSpace = space }
                     )
-                    .frame(maxHeight: .infinity)
+                    .tag(SpacePagerPage.space(space.id))
                 }
-                .padding(.horizontal, LayoutMetrics.horizontalMargin)
-                .padding(.top, 6)
-                .padding(.bottom, 8)
+                SpaceComposePage(
+                    controller: controller,
+                    pageIndex: max(pageCount - 1, 0),
+                    pageCount: pageCount,
+                    onCreated: { space in
+                        controller.selectSpace(space.id, haptic: true)
+                        page = .space(space.id)
+                    }
+                )
+                .tag(SpacePagerPage.compose)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .accessibilityIdentifier(AccessibilityIDs.spacePager)
 
-                Text(controller.selectedSpace?.name ?? "")
-                    .font(.caption)
-                    .opacity(0.01)
-                    .accessibilityIdentifier(AccessibilityIDs.spaceName)
-                    .accessibilityLabel(controller.selectedSpace?.name ?? "")
-                    .frame(width: 8, height: 8)
-                    .offset(x: -120, y: 20)
-
-                Button {
-                    showSettings = true
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 44)
-                }
-                .accessibilityIdentifier(AccessibilityIDs.settingsButton)
-                .accessibilityLabel("Settings")
-                .padding(.trailing, 2)
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3)
+                    .foregroundStyle(.white.opacity(0.72))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(.black.opacity(0.18)))
+            }
+            .accessibilityIdentifier(AccessibilityIDs.settingsButton)
+            .accessibilityLabel("Settings")
+            .padding(.trailing, 4)
+            .padding(.top, 2)
+        }
+        .onAppear {
+            if case .space = page, let selected = controller.selectedSpaceID {
+                page = .space(selected)
             }
         }
         .sheet(isPresented: $showTaskPicker) {
             TaskPickerSheet(controller: controller, isPresented: $showTaskPicker)
+        }
+        .sheet(isPresented: Binding(
+            get: { editingSpace != nil },
+            set: { if !$0 { editingSpace = nil } }
+        )) {
+            if let space = editingSpace {
+                NavigationStack {
+                    SpaceEditorView(controller: controller, space: space)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { editingSpace = nil }
+                            }
+                        }
+                }
+            }
         }
         .alert("Rename", isPresented: Binding(
             get: { renamingTask != nil },
@@ -69,28 +95,30 @@ struct TimerScreen: View {
         }
     }
 
-    private var spacePager: some View {
-        TabView(selection: selectedSpaceBinding) {
-            ForEach(controller.spaces, id: \.id) { space in
-                StopwatchCard(
-                    controller: controller,
-                    space: space,
-                    showsControls: space.id == controller.selectedSpaceID,
-                    onLongPressLap: { showTaskPicker = true }
-                )
-                .tag(space.id as UUID)
-            }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .transaction { $0.animation = nil }
+    private var pageCount: Int {
+        controller.spaces.count + 1
     }
 
-    private var selectedSpaceBinding: Binding<UUID> {
+    private func isActive(_ id: UUID) -> Bool {
+        page == .space(id)
+    }
+
+    private func pageIndex(for value: SpacePagerPage) -> Int {
+        switch value {
+        case .space(let id):
+            return controller.spaces.firstIndex(where: { $0.id == id }) ?? 0
+        case .compose:
+            return controller.spaces.count
+        }
+    }
+
+    private var pageBinding: Binding<SpacePagerPage> {
         Binding(
-            get: { controller.selectedSpaceID ?? controller.spaces.first?.id ?? DemoIDs.work },
+            get: { page },
             set: { newValue in
-                if newValue != controller.selectedSpaceID {
-                    controller.selectSpace(newValue, haptic: true)
+                page = newValue
+                if case .space(let id) = newValue, id != controller.selectedSpaceID {
+                    controller.selectSpace(id, haptic: true)
                 }
             }
         )
