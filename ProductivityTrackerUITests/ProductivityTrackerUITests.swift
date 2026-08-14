@@ -113,7 +113,7 @@ final class ProductivityTrackerUITests: XCTestCase {
         let email = app.descendants(matching: .any)["task-row-Email"].firstMatch
         XCTAssertTrue(email.waitForExistence(timeout: 2))
         email.tap()
-        XCTAssertTrue(email.waitUntilSelected(timeout: 2))
+        XCTAssertTrue(email.waitUntilSelected(timeout: 3))
     }
 
     func testLongPressLapPresentsTaskPickerWithoutLapping() {

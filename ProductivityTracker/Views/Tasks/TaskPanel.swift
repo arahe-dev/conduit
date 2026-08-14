@@ -24,26 +24,20 @@ struct TaskPanel: View {
                 let snap = controller.snapshot(for: space.id)
                 let isSelected = task.id == snap.currentTaskID && !task.isCompleted
                 let parts = controller.taskElapsedParts(for: task)
-                Button {
-                    try? controller.selectTask(task)
-                } label: {
-                    TaskRow(
-                        task: task,
-                        isActive: isSelected,
-                        accent: space.tint.color,
-                        isLive: isActivePage && isSelected && snap.isRunning,
-                        closedElapsed: parts.closed,
-                        openStartedAt: parts.openStartedAt
-                    )
-                }
-                .buttonStyle(.plain)
-                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
-                .listRowBackground(Color.clear)
-                .simultaneousGesture(
-                    TapGesture(count: 2).onEnded {
+                TaskSelectRow(
+                    task: task,
+                    isActive: isSelected,
+                    accent: space.tint.color,
+                    isLive: isActivePage && isSelected && snap.isRunning,
+                    closedElapsed: parts.closed,
+                    openStartedAt: parts.openStartedAt,
+                    onSelect: { try? controller.selectTask(task) },
+                    onToggleComplete: {
                         try? controller.setTaskCompleted(task, isCompleted: !task.isCompleted)
                     }
                 )
+                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                .listRowBackground(Color.clear)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(task.isCompleted ? "Undo" : "Done") {
                         try? controller.setTaskCompleted(task, isCompleted: !task.isCompleted)
@@ -87,5 +81,39 @@ struct TaskPanel: View {
             .accessibilityIdentifier(isActivePage ? "add-task-empty" : "add-task-empty-idle")
         }
         .padding(.vertical, 8)
+    }
+}
+
+private struct TaskSelectRow: View {
+    var task: TaskItem
+    var isActive: Bool
+    var accent: Color
+    var isLive: Bool
+    var closedElapsed: TimeInterval
+    var openStartedAt: Date?
+    var onSelect: () -> Void
+    var onToggleComplete: () -> Void
+    @State private var lastTap: Date?
+
+    var body: some View {
+        TaskRow(
+            task: task,
+            isActive: isActive,
+            accent: accent,
+            isLive: isLive,
+            closedElapsed: closedElapsed,
+            openStartedAt: openStartedAt
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            let now = Date()
+            if let lastTap, now.timeIntervalSince(lastTap) < 0.35 {
+                onToggleComplete()
+                self.lastTap = nil
+            } else {
+                self.lastTap = now
+                onSelect()
+            }
+        }
     }
 }
