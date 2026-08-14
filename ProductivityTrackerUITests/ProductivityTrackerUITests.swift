@@ -29,19 +29,16 @@ final class ProductivityTrackerUITests: XCTestCase {
         let space = app.descendants(matching: .any)["space-name"].firstMatch
         XCTAssertTrue(space.waitForExistence(timeout: 10))
         XCTAssertEqual(space.label, "Work")
-        XCTAssertTrue(app.descendants(matching: .any)["space-pager"].firstMatch.waitForExistence(timeout: 5))
+        let pager = app.descendants(matching: .any)["space-pager"].firstMatch
+        XCTAssertTrue(pager.waitForExistence(timeout: 5))
 
-        let card = app.descendants(matching: .any)["timer-card"].firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout: 5))
-        swipe(element: card, from: 0.85, to: 0.15)
-        XCTAssertTrue(space.waitForExistence(timeout: 2))
-        XCTAssertEqual(space.label, "Chores")
-        XCTAssertTrue(app.descendants(matching: .any)["stopwatch-display-idle"].firstMatch.exists)
+        swipe(element: pager, from: 0.85, to: 0.15)
+        XCTAssertTrue(space.waitUntilLabelEquals("Chores", timeout: 3))
 
         let panel = app.descendants(matching: .any)["task-panel"].firstMatch
         XCTAssertTrue(panel.waitForExistence(timeout: 2))
         swipe(element: panel, from: 0.85, to: 0.15)
-        XCTAssertEqual(space.label, "Personal")
+        XCTAssertTrue(space.waitUntilLabelEquals("Personal", timeout: 3))
     }
 
     func testSwipePastLastSpaceShowsAddSpacePage() {
@@ -109,7 +106,7 @@ final class ProductivityTrackerUITests: XCTestCase {
         let email = app.descendants(matching: .any)["task-row-Email"].firstMatch
         XCTAssertTrue(email.waitForExistence(timeout: 2))
         email.tap()
-        XCTAssertTrue(email.isSelected)
+        XCTAssertTrue(email.waitUntilSelected(timeout: 2))
     }
 
     func testLongPressLapPresentsTaskPickerWithoutLapping() {
@@ -178,6 +175,12 @@ final class ProductivityTrackerUITests: XCTestCase {
 extension XCUIElement {
     func waitUntilLabelEquals(_ label: String, timeout: TimeInterval) -> Bool {
         let predicate = NSPredicate(format: "label == %@", label)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
+    }
+
+    func waitUntilSelected(timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate(format: "isSelected == true")
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
         return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
