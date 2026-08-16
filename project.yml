@@ -46,6 +46,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Conduit
         INFOPLIST_KEY_LSRequiresIPhoneOS: YES
         INFOPLIST_KEY_NSSupportsLiveActivities: YES
+        INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

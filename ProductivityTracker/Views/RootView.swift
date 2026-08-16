@@ -3,31 +3,19 @@ import SwiftData
 
 struct RootView: View {
     let launch: LaunchConfiguration
-    @Environment(\.modelContext) private var modelContext
-    @State private var controller: SessionController?
+    @Bindable var controller: SessionController
     @State private var showSettings = false
 
     var body: some View {
         Group {
             if launch.liveActivityPreview {
                 LiveActivityPreviewScreen()
-            } else if let controller {
-                TimerScreen(controller: controller, showSettings: $showSettings)
             } else {
-                Color.black.ignoresSafeArea()
-            }
-        }
-        .onAppear {
-            if controller == nil && !launch.liveActivityPreview {
-                let created = SessionController(context: modelContext, launch: launch)
-                try? created.bootstrap()
-                controller = created
+                TimerScreen(controller: controller, showSettings: $showSettings)
             }
         }
         .sheet(isPresented: $showSettings) {
-            if let controller {
-                SettingsView(controller: controller)
-            }
+            SettingsView(controller: controller)
         }
     }
 }

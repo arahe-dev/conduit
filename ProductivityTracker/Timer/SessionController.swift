@@ -153,11 +153,11 @@ final class SessionController {
         try start(in: space)
     }
 
-    func start(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true) throws {
+    func start(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true, at now: Date? = nil, haptic: Bool = true) throws {
         if selectedSpaceID != space.id {
             selectSpace(space.id)
         }
-        let now = timeSource.now()
+        let now = now ?? timeSource.now()
         if let runningID = runningSpaceID, runningID != space.id {
             try freezeSpace(runningID, at: now, haptic: false)
         }
@@ -170,8 +170,10 @@ final class SessionController {
         case .idle:
             try startNew(space: space, engine: engine, at: now)
         }
-        Haptics.start()
-        notifications.requestAuthorizationIfNeeded()
+        if haptic {
+            Haptics.start()
+            notifications.requestAuthorizationIfNeeded()
+        }
         if publishLiveActivity {
             liveActivity.startOrUpdate(from: self, at: now)
         }
@@ -186,9 +188,9 @@ final class SessionController {
         try stop(in: space)
     }
 
-    func stop(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true) throws {
-        let now = timeSource.now()
-        try freezeSpace(space.id, at: now, haptic: true)
+    func stop(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true, at now: Date? = nil, haptic: Bool = true) throws {
+        let now = now ?? timeSource.now()
+        try freezeSpace(space.id, at: now, haptic: haptic)
         if publishLiveActivity {
             liveActivity.startOrUpdate(from: self, at: now)
         }
@@ -572,25 +574,21 @@ final class SessionController {
         noteChange()
     }
 
-    func startFromLiveActivity() async {
+    func startFromLiveActivity(at now: Date? = nil) async {
+        let instant = now ?? timeSource.now()
         guard let space = liveActivitySpace() else { return }
-        try? start(in: space, publishLiveActivity: false, persist: false)
-        await liveActivity.startOrUpdateAndWait(from: self, at: timeSource.now())
-        try? context.save()
+        try? start(in: space, publishLiveActivity: false, persist: true, at: instant, haptic: false)
     }
 
-    func stopFromLiveActivity() async {
+    func stopFromLiveActivity(at now: Date? = nil) async {
+        let instant = now ?? timeSource.now()
         guard let space = liveActivitySpace() else { return }
-        try? stop(in: space, publishLiveActivity: false, persist: false)
-        await liveActivity.startOrUpdateAndWait(from: self, at: timeSource.now())
-        try? context.save()
+        try? stop(in: space, publishLiveActivity: false, persist: true, at: instant, haptic: false)
     }
 
     func resetFromLiveActivity() async {
         guard let space = liveActivitySpace() else { return }
-        try? reset(in: space, publishLiveActivity: false, persist: false)
-        await liveActivity.dismissAndWait()
-        try? context.save()
+        try? reset(in: space, publishLiveActivity: false, persist: true)
     }
 
     func lapFromLiveActivity() throws {

@@ -6,6 +6,7 @@ import UIKit
 struct ProductivityTrackerApp: App {
     private let launch = LaunchConfiguration.from(ProcessInfo.processInfo.arguments, environment: ProcessInfo.processInfo.environment)
     private let container: ModelContainer
+    private let controller: SessionController
 
     init() {
         if launch.uiTesting {
@@ -14,6 +15,9 @@ struct ProductivityTrackerApp: App {
         do {
             container = try PersistenceController.makeContainer(inMemory: launch.inMemoryStore)
             AppRuntime.shared.container = container
+            let controller = SessionController(context: ModelContext(container), launch: launch)
+            try controller.bootstrap()
+            self.controller = controller
         } catch {
             fatalError("Unable to create ModelContainer: \(error)")
         }
@@ -21,7 +25,7 @@ struct ProductivityTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(launch: launch)
+            RootView(launch: launch, controller: controller)
                 .modelContainer(container)
                 .preferredColorScheme(.dark)
         }

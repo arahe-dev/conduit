@@ -78,4 +78,24 @@ extension SessionActivityAttributes.ContentState {
     var timerRange: ClosedRange<Date> {
         displayStart...displayStart.addingTimeInterval(60 * 60 * 24 * 14)
     }
+
+    /// Freeze the system timer in place. Keeps `displayStart` so the digits do not rebuild.
+    func paused(at now: Date) -> SessionActivityAttributes.ContentState {
+        guard isRunning else { return self }
+        var next = self
+        next.isRunning = false
+        next.elapsedAtPause = now.timeIntervalSince(displayStart)
+        next.phaseRaw = "stopped"
+        return next
+    }
+
+    /// Continue from the frozen elapsed time. Re-anchors `displayStart` to `now - elapsed`.
+    func resumed(at now: Date) -> SessionActivityAttributes.ContentState {
+        guard !isRunning else { return self }
+        var next = self
+        next.displayStart = now.addingTimeInterval(-elapsedAtPause)
+        next.isRunning = true
+        next.phaseRaw = "running"
+        return next
+    }
 }

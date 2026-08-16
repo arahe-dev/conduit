@@ -143,6 +143,36 @@ final class LiveActivityStateTests: XCTestCase {
         )
     }
 
+    func testPauseKeepsClockAnchorAndResumeReanchorsElapsed() {
+        let start = Date(timeIntervalSince1970: 4000)
+        let running = LiveActivityPresentation.content(
+            spaceName: "Work",
+            taskName: "Deep Work",
+            phaseRaw: TimerPhase.running.rawValue,
+            isRunning: true,
+            elapsed: 12,
+            now: start.addingTimeInterval(12),
+            displayStart: start
+        )
+        let pausedAt = start.addingTimeInterval(12.5)
+        let paused = running.paused(at: pausedAt)
+        XCTAssertFalse(paused.isRunning)
+        XCTAssertEqual(paused.displayStart, start)
+        XCTAssertEqual(paused.elapsedAtPause, 12.5, accuracy: 0.0001)
+        XCTAssertEqual(paused.pauseTime?.timeIntervalSince1970, pausedAt.timeIntervalSince1970, accuracy: 0.0001)
+
+        let resumeAt = pausedAt.addingTimeInterval(30)
+        let resumed = paused.resumed(at: resumeAt)
+        XCTAssertTrue(resumed.isRunning)
+        XCTAssertNil(resumed.pauseTime)
+        XCTAssertEqual(resumed.elapsedAtPause, 12.5, accuracy: 0.0001)
+        XCTAssertEqual(
+            resumeAt.timeIntervalSince(resumed.displayStart),
+            12.5,
+            accuracy: 0.0001
+        )
+    }
+
     func testSpaceOwnershipStaysWithRunningSpace() throws {
         let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 2000))
         let live = NullLiveActivityManager()
