@@ -78,7 +78,7 @@ Prior audit conclusions stand (native lists, per-Space engines, Stop/Start/Reset
 
 **Live Activity**
 
-- Large space-colored name, current task, `Text(timerInterval:showsHours:true)` with `pauseTime` when stopped (no ms, no cross-fade swap).
+- Large space-colored name, current task, `Text(timerInterval:showsHours:true)` while running and with `pauseTime` when stopped (no ms). Resume uses a new clock identity, not an unpaused `pauseTime`.
 - Stop / Start plus Reset controls; large workspace icon; background tint from Space color.
 - Stop still freezes; Start resumes; Reset archives and dismisses the Live Activity immediately.
 

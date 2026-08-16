@@ -1,37 +1,5 @@
 import AppIntents
 
-struct SetStopwatchRunningIntent: SetValueIntent, LiveActivityIntent {
-    static var title: LocalizedStringResource { "Stopwatch Running" }
-    static var openAppWhenRun: Bool { false }
-    static var authenticationPolicy: IntentAuthenticationPolicy { .alwaysAllowed }
-
-    @Parameter(title: "Running")
-    var value: Bool
-
-    init() {}
-
-    init(value: Bool) {
-        self.value = value
-    }
-
-    func perform() async throws -> some IntentResult {
-        let now = Date()
-        let wantRunning = StopwatchRunningDecision.wantRunning(
-            requested: value,
-            currentlyRunning: LiveActivityClock.currentIsRunning
-        )
-        await LiveActivityClock.apply(running: wantRunning, at: now)
-        #if APP_TARGET
-        if wantRunning {
-            await AppRuntime.shared.sessionController?.startFromLiveActivity(at: now)
-        } else {
-            await AppRuntime.shared.sessionController?.stopFromLiveActivity(at: now)
-        }
-        #endif
-        return .result()
-    }
-}
-
 struct StopFromLiveActivityIntent: LiveActivityIntent {
     static var title: LocalizedStringResource { "Stop" }
     static var openAppWhenRun: Bool { false }

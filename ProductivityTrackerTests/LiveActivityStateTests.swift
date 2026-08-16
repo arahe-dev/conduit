@@ -60,20 +60,33 @@ final class LiveActivityStateTests: XCTestCase {
     func testSurfaceTapDoesNotCarryPauseOrResumeIntent() {
         XCTAssertFalse(LiveActivityPresentation.backgroundMutatesTimer)
         XCTAssertNil(LiveActivityPresentation.backgroundIntentName)
-        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: true), "SetStopwatchRunningIntent")
-        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: false), "SetStopwatchRunningIntent")
+        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: true), "StopFromLiveActivityIntent")
+        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: false), "ResumeFromLiveActivityIntent")
         XCTAssertEqual(LiveActivityPresentation.exclusiveControl(isRunning: true), .stop)
         XCTAssertEqual(LiveActivityPresentation.exclusiveControl(isRunning: false), .start)
-        XCTAssertEqual(String(describing: SetStopwatchRunningIntent.self), "SetStopwatchRunningIntent")
+        XCTAssertEqual(String(describing: StopFromLiveActivityIntent.self), "StopFromLiveActivityIntent")
+        XCTAssertEqual(String(describing: ResumeFromLiveActivityIntent.self), "ResumeFromLiveActivityIntent")
     }
 
-    func testWantRunningTogglesWhenRequestedMatchesCurrent() {
-        XCTAssertFalse(StopwatchRunningDecision.wantRunning(requested: false, currentlyRunning: true))
-        XCTAssertTrue(StopwatchRunningDecision.wantRunning(requested: true, currentlyRunning: false))
-        XCTAssertTrue(StopwatchRunningDecision.wantRunning(requested: false, currentlyRunning: false))
-        XCTAssertFalse(StopwatchRunningDecision.wantRunning(requested: true, currentlyRunning: true))
-        XCTAssertFalse(StopwatchRunningDecision.wantRunning(requested: false, currentlyRunning: nil))
-        XCTAssertTrue(StopwatchRunningDecision.wantRunning(requested: true, currentlyRunning: nil))
+    func testElapsedClockIdentityChangesOnPauseAndResume() {
+        let start = Date(timeIntervalSince1970: 4000)
+        let running = LiveActivityPresentation.content(
+            spaceName: "Work",
+            taskName: "Deep Work",
+            phaseRaw: TimerPhase.running.rawValue,
+            isRunning: true,
+            elapsed: 12,
+            now: start.addingTimeInterval(12),
+            displayStart: start
+        )
+        let paused = running.paused(at: start.addingTimeInterval(12.5))
+        let resumed = paused.resumed(at: start.addingTimeInterval(42.5))
+        XCTAssertNotEqual(running.elapsedClockID, paused.elapsedClockID)
+        XCTAssertNotEqual(paused.elapsedClockID, resumed.elapsedClockID)
+        XCTAssertTrue(running.elapsedClockID.hasPrefix("run-"))
+        XCTAssertTrue(paused.elapsedClockID.hasPrefix("stop-"))
+        XCTAssertTrue(resumed.elapsedClockID.hasPrefix("run-"))
+        XCTAssertNotEqual(running.displayStart, resumed.displayStart)
     }
 
     func testLiveActivityContentIncludesTintAndIconFields() throws {
@@ -181,6 +194,86 @@ final class LiveActivityStateTests: XCTestCase {
             12.5,
             accuracy: 0.0001
         )
+        XCTAssertNotEqual(paused.elapsedClockID, resumed.elapsedClockID)
+    }
+
+    func testLockScreenStopThenStartRepublishesRunningClock() async throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 5000))
+        let live = NullLiveActivityManager()
+        let controller = SessionController(
+            context: ModelContext(try PersistenceController.makeContainer(inMemory: true)),
+            timeSource: time,
+            notifications: RecordingNotificationService(),
+            liveActivity: live,
+            settings: SettingsStore(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            launch: LaunchConfiguration(
+                uiTesting: true,
+                resetStore: true,
+                screenshotMode: false,
+                startRunning: false,
+                frozenElapsed: nil,
+                inMemoryStore: true,
+                timerState: nil,
+                liveActivityPreview: false
+            )
+        )
+        try controller.bootstrap()
+        try controller.start()
+        time.advance(by: 10)
+        let runningAnchor = live.lastState?.displayStart
+        await controller.stopFromLiveActivity(at: time.now())
+        XCTAssertEqual(controller.snapshot.phase, .stopped)
+        XCTAssertEqual(live.lastState?.isRunning, false)
+        XCTAssertEqual(live.lastState?.displayStart, runningAnchor)
+        XCTAssertNotNil(live.lastState?.pauseTime)
+        let pausedID = live.lastState?.elapsedClockID
+
+        time.advance(by: 20)
+        await controller.startFromLiveActivity(at: time.now())
+        XCTAssertEqual(controller.snapshot.phase, .running)
+        XCTAssertEqual(live.lastState?.isRunning, true)
+        XCTAssertNil(live.lastState?.pauseTime)
+        XCTAssertNotEqual(live.lastState?.displayStart, runningAnchor)
+        XCTAssertNotEqual(live.lastState?.elapsedClockID, pausedID)
+        XCTAssertEqual(
+            time.now().timeIntervalSince(live.lastState!.displayStart),
+            10,
+            accuracy: 0.01
+        )
+        time.advance(by: 5)
+        XCTAssertEqual(controller.displayedElapsed(at: time.now()), 15, accuracy: 0.01)
+    }
+
+    func testLockScreenResumeUsesLiveActivityOwnerNotSelectedSpace() async throws {
+        let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 6000))
+        let live = NullLiveActivityManager()
+        let controller = SessionController(
+            context: ModelContext(try PersistenceController.makeContainer(inMemory: true)),
+            timeSource: time,
+            notifications: RecordingNotificationService(),
+            liveActivity: live,
+            settings: SettingsStore(defaults: UserDefaults(suiteName: UUID().uuidString)!),
+            launch: LaunchConfiguration(
+                uiTesting: true,
+                resetStore: true,
+                screenshotMode: false,
+                startRunning: false,
+                frozenElapsed: nil,
+                inMemoryStore: true,
+                timerState: nil,
+                liveActivityPreview: false
+            )
+        )
+        try controller.bootstrap()
+        try controller.start()
+        time.advance(by: 8)
+        await controller.stopFromLiveActivity(at: time.now())
+        controller.selectSpace(DemoIDs.chores)
+        await controller.startFromLiveActivity(at: time.now())
+        XCTAssertEqual(controller.snapshot(for: DemoIDs.work).phase, .running)
+        XCTAssertEqual(controller.snapshot(for: DemoIDs.chores).phase, .idle)
+        XCTAssertEqual(live.lastState?.spaceName, "Work")
+        XCTAssertEqual(live.lastState?.isRunning, true)
     }
 
     func testSpaceOwnershipStaysWithRunningSpace() throws {

@@ -38,7 +38,7 @@ The corrective implementation removes those structures: Apple Stopwatch semantic
 
 Documentation and simulator preview now describe this layout; a fresh physical Lock Screen pass is still recommended.
 
-- **Leading column:** large space-colored name, current task, elapsed via `Text(timerInterval:showsHours:true)` with `pauseTime` when stopped (hh:mm:ss, no milliseconds, no fade swap).
+- **Leading column:** large space-colored name, current task, elapsed via `Text(timerInterval:showsHours:true)` while running and with `pauseTime` when stopped (hh:mm:ss). Resume creates a new timer view identity so digits run again.
 - **Controls:** explicit Stop or Start plus Reset (`xmark`); intents only (`openAppWhenRun = false`); surface tap opens the app without mutating the timer.
 - **Trailing:** large workspace icon (SF Symbol, emoji, or monogram).
 - **Background:** Space tint via `activityBackgroundTint`, not a custom mini-app chrome block.

@@ -33,7 +33,7 @@ enum LiveActivityPresentation {
     }
 
     static func exclusiveControlIntentName(isRunning: Bool) -> String {
-        "SetStopwatchRunningIntent"
+        isRunning ? "StopFromLiveActivityIntent" : "ResumeFromLiveActivityIntent"
     }
 
     static func content(
@@ -73,6 +73,13 @@ extension SessionActivityAttributes.ContentState {
 
     var pauseTime: Date? {
         isRunning ? nil : displayStart.addingTimeInterval(elapsedAtPause)
+    }
+
+    /// Identity for the lock-screen timer view. Pause and resume must not reuse the
+    /// same `Text(timerInterval:pauseTime:)` instance — once that view has a pause
+    /// time, the system clock stays frozen even if `pauseTime` later becomes nil.
+    var elapsedClockID: String {
+        "\(isRunning ? "run" : "stop")-\(displayStart.timeIntervalSince1970)-\(elapsedAtPause)"
     }
 
     var timerRange: ClosedRange<Date> {

@@ -68,8 +68,8 @@ Lock Screen layout:
 
 - Large space-colored **space name**
 - Current task subtitle
-- Elapsed via `Text(timerInterval:countsDown:false, showsHours:true)` with `pauseTime` when stopped — hours/minutes/seconds only (no milliseconds, no fade swap between views)
-- Explicit **Stop** or **Start** plus **Reset** (`xmark`) controls via Live Activity intents (`openAppWhenRun = false`)
+- Elapsed via `Text(timerInterval:countsDown:false, showsHours:true)` while running. Stopped uses the same formatter with `pauseTime`. Resume **replaces** that view (new `displayStart` / `elapsedClockID`) instead of clearing `pauseTime` on the paused instance — the system timer does not unfreeze otherwise.
+- Explicit **Stop** (`StopFromLiveActivityIntent`) or **Start** (`ResumeFromLiveActivityIntent`) plus **Reset** (`xmark`). Not a `Toggle` / `SetValueIntent` (that control can pause twice and never resume).
 - Large workspace icon on the trailing edge
 - Background tint from the Space color (`activityBackgroundTint`)
 

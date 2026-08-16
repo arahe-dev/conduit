@@ -6,12 +6,23 @@ struct LiveActivityElapsedText: View {
     var font: Font
 
     var body: some View {
-        Text(
-            timerInterval: state.timerRange,
-            pauseTime: state.pauseTime,
-            countsDown: false,
-            showsHours: true
-        )
+        Group {
+            if state.isRunning {
+                Text(
+                    timerInterval: state.timerRange,
+                    countsDown: false,
+                    showsHours: true
+                )
+            } else {
+                Text(
+                    timerInterval: state.timerRange,
+                    pauseTime: state.pauseTime,
+                    countsDown: false,
+                    showsHours: true
+                )
+            }
+        }
+        .id(state.elapsedClockID)
         .font(font)
         .monospacedDigit()
         .foregroundStyle(.white)
@@ -65,17 +76,30 @@ struct LiveActivityLockScreen: View {
         .accessibilityLabel("\(state.spaceName), \(state.taskName), \(ElapsedFormatter.compact(state.elapsedAtPause))")
     }
 
+    @ViewBuilder
     private var liveControl: some View {
-        Toggle(isOn: state.isRunning, intent: SetStopwatchRunningIntent(value: !state.isRunning)) {
-            Image(systemName: state.isRunning ? "stop.fill" : "play.fill")
-                .font(.footnote.weight(.semibold))
-                .frame(width: 32, height: 32)
+        if state.isRunning {
+            Button(intent: StopFromLiveActivityIntent()) {
+                controlGlyph("stop.fill")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("live-activity-stop")
+            .accessibilityLabel("Stop")
+        } else {
+            Button(intent: ResumeFromLiveActivityIntent()) {
+                controlGlyph("play.fill")
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("live-activity-start")
+            .accessibilityLabel("Start")
         }
-        .toggleStyle(.button)
-        .buttonStyle(.plain)
-        .tint(.white)
-        .accessibilityIdentifier(state.isRunning ? "live-activity-stop" : "live-activity-start")
-        .accessibilityLabel(state.isRunning ? "Stop" : "Start")
+    }
+
+    private func controlGlyph(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(width: 32, height: 32)
     }
 
     private var closeControl: some View {
@@ -142,12 +166,19 @@ struct DynamicIslandExpandedContent: View {
             LiveActivityElapsedText(state: state, font: .title3.weight(.light))
             if showsControls {
                 HStack(spacing: 8) {
-                    Toggle(isOn: state.isRunning, intent: SetStopwatchRunningIntent(value: !state.isRunning)) {
-                        Image(systemName: state.isRunning ? "stop.fill" : "play.fill")
+                    if state.isRunning {
+                        Button(intent: StopFromLiveActivityIntent()) {
+                            Image(systemName: "stop.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Stop")
+                    } else {
+                        Button(intent: ResumeFromLiveActivityIntent()) {
+                            Image(systemName: "play.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Start")
                     }
-                    .toggleStyle(.button)
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(state.isRunning ? "Stop" : "Start")
                     Button(intent: ResetFromLiveActivityIntent()) {
                         Image(systemName: "xmark")
                     }

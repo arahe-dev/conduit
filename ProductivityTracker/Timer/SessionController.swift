@@ -18,6 +18,8 @@ final class SessionController {
     private(set) var selectedSpaceID: UUID?
     private(set) var lastError: String?
     private(set) var mutation: UInt64 = 0
+    /// Space shown on the Live Activity. Used after Stop so resume is not the selected page.
+    private(set) var liveActivityOwnerSpaceID: UUID?
 
     var timeSource: any TimeSource
     var notifications: any NotificationScheduling
@@ -170,6 +172,7 @@ final class SessionController {
         case .idle:
             try startNew(space: space, engine: engine, at: now)
         }
+        liveActivityOwnerSpaceID = space.id
         if haptic {
             Haptics.start()
             notifications.requestAuthorizationIfNeeded()
@@ -191,6 +194,7 @@ final class SessionController {
     func stop(in space: Space, publishLiveActivity: Bool = true, persist: Bool = true, at now: Date? = nil, haptic: Bool = true) throws {
         let now = now ?? timeSource.now()
         try freezeSpace(space.id, at: now, haptic: haptic)
+        liveActivityOwnerSpaceID = space.id
         if publishLiveActivity {
             liveActivity.startOrUpdate(from: self, at: now)
         }
@@ -239,6 +243,9 @@ final class SessionController {
         engine.resetDisplay()
         engine.selectTask(keptTask)
         publish(engine)
+        if liveActivityOwnerSpaceID == space.id {
+            liveActivityOwnerSpaceID = nil
+        }
         if publishLiveActivity {
             liveActivity.dismissImmediate()
         }
@@ -578,12 +585,14 @@ final class SessionController {
         let instant = now ?? timeSource.now()
         guard let space = liveActivitySpace() else { return }
         try? start(in: space, publishLiveActivity: false, persist: true, at: instant, haptic: false)
+        await liveActivity.startOrUpdateAndWait(from: self, at: instant)
     }
 
     func stopFromLiveActivity(at now: Date? = nil) async {
         let instant = now ?? timeSource.now()
         guard let space = liveActivitySpace() else { return }
         try? stop(in: space, publishLiveActivity: false, persist: true, at: instant, haptic: false)
+        await liveActivity.startOrUpdateAndWait(from: self, at: instant)
     }
 
     func resetFromLiveActivity() async {
@@ -600,8 +609,10 @@ final class SessionController {
         if let id = runningSpaceID {
             return spaces.first { $0.id == id }
         }
-        if snapshot.phase == .stopped {
-            return selectedSpace
+        if let id = liveActivityOwnerSpaceID,
+           snapshots[id]?.phase == .stopped,
+           let space = spaces.first(where: { $0.id == id }) {
+            return space
         }
         return spaces.first { snapshots[$0.id]?.phase == .stopped }
     }
