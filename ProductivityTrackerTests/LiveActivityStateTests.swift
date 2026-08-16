@@ -159,7 +159,7 @@ final class LiveActivityStateTests: XCTestCase {
         XCTAssertFalse(paused.isRunning)
         XCTAssertEqual(paused.displayStart, start)
         XCTAssertEqual(paused.elapsedAtPause, 12.5, accuracy: 0.0001)
-        XCTAssertEqual(paused.pauseTime?.timeIntervalSince1970, pausedAt.timeIntervalSince1970, accuracy: 0.0001)
+        XCTAssertEqual(paused.pauseTime?.timeIntervalSince1970, pausedAt.timeIntervalSince1970)
 
         let resumeAt = pausedAt.addingTimeInterval(30)
         let resumed = paused.resumed(at: resumeAt)
