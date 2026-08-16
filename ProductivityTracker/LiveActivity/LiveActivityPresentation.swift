@@ -65,43 +65,48 @@ struct LiveActivityLockScreen: View {
         .accessibilityLabel("\(state.spaceName), \(state.taskName), \(ElapsedFormatter.compact(state.elapsedAtPause))")
     }
 
-    @ViewBuilder
     private var liveControl: some View {
-        if state.isRunning {
-            Button(intent: StopFromLiveActivityIntent()) {
-                controlGlyph("stop.fill")
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("live-activity-stop")
-            .accessibilityLabel("Stop")
-        } else {
-            Button(intent: ResumeFromLiveActivityIntent()) {
-                controlGlyph("play.fill")
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("live-activity-start")
-            .accessibilityLabel("Start")
+        Toggle(isOn: state.isRunning, intent: SetStopwatchRunningIntent()) {
+            Label(state.isRunning ? "Stop" : "Start", systemImage: state.isRunning ? "stop.fill" : "play.fill")
+                .labelStyle(.iconOnly)
         }
+        .toggleStyle(LiveActivityRunningToggleStyle())
+        .accessibilityIdentifier(state.isRunning ? "live-activity-stop" : "live-activity-start")
+        .accessibilityLabel(state.isRunning ? "Stop" : "Start")
     }
 
     private var closeControl: some View {
         Button(intent: ResetFromLiveActivityIntent()) {
-            controlGlyph("xmark")
+            Image(systemName: "xmark")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(.white.opacity(0.14)))
+                .overlay {
+                    Circle().strokeBorder(.white.opacity(0.22), lineWidth: 1)
+                }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("live-activity-close")
         .accessibilityLabel("Reset")
     }
+}
 
-    private func controlGlyph(_ name: String) -> some View {
-        Image(systemName: name)
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(.white)
-            .frame(width: 32, height: 32)
-            .background(Circle().fill(.white.opacity(0.14)))
-            .overlay {
-                Circle().strokeBorder(.white.opacity(0.22), lineWidth: 1)
-            }
+struct LiveActivityRunningToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button {
+            configuration.isOn.toggle()
+        } label: {
+            Image(systemName: configuration.isOn ? "stop.fill" : "play.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(.white.opacity(0.14)))
+                .overlay {
+                    Circle().strokeBorder(.white.opacity(0.22), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -152,19 +157,12 @@ struct DynamicIslandExpandedContent: View {
             LiveActivityElapsedText(state: state, font: .title3.weight(.light))
             if showsControls {
                 HStack(spacing: 8) {
-                    if state.isRunning {
-                        Button(intent: StopFromLiveActivityIntent()) {
-                            Image(systemName: "stop.fill")
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Stop")
-                    } else {
-                        Button(intent: ResumeFromLiveActivityIntent()) {
-                            Image(systemName: "play.fill")
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Start")
+                    Toggle(isOn: state.isRunning, intent: SetStopwatchRunningIntent()) {
+                        Label(state.isRunning ? "Stop" : "Start", systemImage: state.isRunning ? "stop.fill" : "play.fill")
+                            .labelStyle(.iconOnly)
                     }
+                    .toggleStyle(LiveActivityRunningToggleStyle())
+                    .accessibilityLabel(state.isRunning ? "Stop" : "Start")
                     Button(intent: ResetFromLiveActivityIntent()) {
                         Image(systemName: "xmark")
                     }

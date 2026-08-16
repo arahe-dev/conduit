@@ -33,7 +33,7 @@ enum LiveActivityPresentation {
     }
 
     static func exclusiveControlIntentName(isRunning: Bool) -> String {
-        isRunning ? "StopFromLiveActivityIntent" : "ResumeFromLiveActivityIntent"
+        "SetStopwatchRunningIntent"
     }
 
     static func content(

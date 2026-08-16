@@ -60,11 +60,11 @@ final class LiveActivityStateTests: XCTestCase {
     func testSurfaceTapDoesNotCarryPauseOrResumeIntent() {
         XCTAssertFalse(LiveActivityPresentation.backgroundMutatesTimer)
         XCTAssertNil(LiveActivityPresentation.backgroundIntentName)
-        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: true), "StopFromLiveActivityIntent")
-        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: false), "ResumeFromLiveActivityIntent")
+        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: true), "SetStopwatchRunningIntent")
+        XCTAssertEqual(LiveActivityPresentation.exclusiveControlIntentName(isRunning: false), "SetStopwatchRunningIntent")
         XCTAssertEqual(LiveActivityPresentation.exclusiveControl(isRunning: true), .stop)
         XCTAssertEqual(LiveActivityPresentation.exclusiveControl(isRunning: false), .start)
-        XCTAssertEqual(String(describing: ResetFromLiveActivityIntent.self), "ResetFromLiveActivityIntent")
+        XCTAssertEqual(String(describing: SetStopwatchRunningIntent.self), "SetStopwatchRunningIntent")
     }
 
     func testLiveActivityContentIncludesTintAndIconFields() throws {
@@ -159,7 +159,8 @@ final class LiveActivityStateTests: XCTestCase {
         XCTAssertFalse(paused.isRunning)
         XCTAssertEqual(paused.displayStart, start)
         XCTAssertEqual(paused.elapsedAtPause, 12.5, accuracy: 0.0001)
-        XCTAssertEqual(paused.pauseTime?.timeIntervalSince1970, pausedAt.timeIntervalSince1970)
+        XCTAssertNotNil(paused.pauseTime)
+        XCTAssertEqual(paused.pauseTime!.timeIntervalSince1970, pausedAt.timeIntervalSince1970, accuracy: 0.0001)
 
         let resumeAt = pausedAt.addingTimeInterval(30)
         let resumed = paused.resumed(at: resumeAt)
