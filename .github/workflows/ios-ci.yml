@@ -1,0 +1,139 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main, master, cursor/**]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-package:
+    name: Generate, test, screenshot, package
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      SCREENSHOT_DIR: ${{ github.workspace }}/artifacts/screenshots
+      ARTIFACT_DIR: ${{ github.workspace }}/artifacts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Print toolchain
+        run: |
+          echo "macOS: $(sw_vers -productVersion)"
+          echo "Xcode:"
+          xcodebuild -version
+          echo "Swift:"
+          swift --version
+          echo "Available Xcode apps:"
+          ls /Applications | grep -i xcode || true
+          echo "Simulator runtimes:"
+          xcrun simctl list runtimes || true
+
+      - name: Select Xcode 26
+        run: |
+          if [[ -d /Applications/Xcode_26.6.app ]]; then
+            sudo xcode-select -s /Applications/Xcode_26.6.app
+          elif [[ -d /Applications/Xcode.app ]]; then
+            sudo xcode-select -s /Applications/Xcode.app
+          fi
+          xcodebuild -version
+
+      - name: Install pinned XcodeGen
+        run: bash Scripts/ci/install-xcodegen.sh
+
+      - name: Generate Xcode project
+        run: |
+          xcodegen generate --spec project.yml
+          test -d ProductivityTracker.xcodeproj
+          xcodebuild -list -project ProductivityTracker.xcodeproj
+
+      - name: Select simulator
+        run: bash Scripts/ci/select-simulator.sh
+
+      - name: Build simulator
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ProductivityTracker.xcodeproj \
+            -scheme ProductivityTracker \
+            -destination "platform=iOS Simulator,id=${SIM_UDID},arch=arm64" \
+            -configuration Debug \
+            ONLY_ACTIVE_ARCH=YES \
+            ENABLE_TESTABILITY=YES \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build | xcbeautify --renderer github-actions
+
+      - name: Unit and UI tests
+        run: |
+          set -o pipefail
+          mkdir -p "$SCREENSHOT_DIR" "$ARTIFACT_DIR"
+          xcodebuild \
+            -project ProductivityTracker.xcodeproj \
+            -scheme ProductivityTracker \
+            -destination "platform=iOS Simulator,id=${SIM_UDID},arch=arm64" \
+            -configuration Debug \
+            -resultBundlePath "$ARTIFACT_DIR/TestResults.xcresult" \
+            ONLY_ACTIVE_ARCH=YES \
+            ENABLE_TESTABILITY=YES \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            test | xcbeautify --renderer github-actions
+
+      - name: Unsigned device build
+        run: |
+          set -o pipefail
+          mkdir -p "$ARTIFACT_DIR/device"
+          xcodebuild \
+            -project ProductivityTracker.xcodeproj \
+            -scheme ProductivityTracker \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath "$ARTIFACT_DIR/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            build | xcbeautify --renderer github-actions
+          APP="$(find "$ARTIFACT_DIR/DerivedData" -path "*.app" -type d | grep "Release-iphoneos/ProductivityTracker.app$" | head -n 1)"
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          test -n "$APP"
+          test -d "$APP"
+
+      - name: Package unsigned IPA
+        run: bash Scripts/ci/package-ipa.sh "$APP" "$ARTIFACT_DIR"
+
+      - name: Build metadata
+        run: |
+          {
+            echo "commit=$(git rev-parse HEAD)"
+            echo "ref=${GITHUB_REF}"
+            echo "xcode=$(xcodebuild -version | tr '\n' ' ')"
+            echo "macos=$(sw_vers -productVersion)"
+            echo "simulator_name=${SIM_NAME}"
+            echo "simulator_os=${SIM_OS}"
+            echo "simulator_udid=${SIM_UDID}"
+            echo "ipa=conduit-unsigned.ipa"
+            echo "sha256=$(cut -d ' ' -f1 "$ARTIFACT_DIR/SHA256SUMS.txt")"
+            echo "UNSIGNED=must be signed with your own Apple Account before installation"
+          } | tee "$ARTIFACT_DIR/build-metadata.txt"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: conduit-iOS-device-unsigned
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            artifacts/conduit-unsigned.ipa
+            artifacts/SHA256SUMS.txt
+            artifacts/build-metadata.txt
+            artifacts/screenshots
+            artifacts/TestResults.xcresult

@@ -1,0 +1,126 @@
+name: ProductivityTracker
+options:
+  bundleIdPrefix: com.arahe
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+  defaultConfig: Debug
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    SUPPORTS_MACCATALYST: "NO"
+    SWIFT_STRICT_CONCURRENCY: targeted
+    ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+    CLANG_ENABLE_MODULES: "YES"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_IDENTITY: ""
+  configs:
+    Debug:
+      ENABLE_TESTABILITY: YES
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+configs:
+  Debug: debug
+  Release: release
+targets:
+  ProductivityTracker:
+    type: application
+    platform: iOS
+    sources:
+      - path: ProductivityTracker
+      - path: ProductivityTrackerLiveActivity/ActivityAttributes
+      - path: ProductivityTrackerLiveActivity/Intents
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker
+        PRODUCT_NAME: ProductivityTracker
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) APP_TARGET"
+        INFOPLIST_FILE: ProductivityTracker/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Conduit
+        INFOPLIST_KEY_LSRequiresIPhoneOS: YES
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
+        INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
+    dependencies:
+      - target: ProductivityTrackerLiveActivity
+        embed: true
+    scheme:
+      testTargets:
+        - ProductivityTrackerTests
+        - ProductivityTrackerUITests
+      gatherCoverageData: false
+  ProductivityTrackerLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ProductivityTrackerLiveActivity
+      - path: ProductivityTracker/Timer/ElapsedFormatter.swift
+      - path: ProductivityTracker/LiveActivity/LiveActivityPresentation.swift
+      - path: ProductivityTracker/Models/SpaceTint.swift
+      - path: ProductivityTracker/Models/SpaceIcon.swift
+      - path: ProductivityTracker/Views/Spaces/SpaceIconView.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.LiveActivity
+        PRODUCT_NAME: ProductivityTrackerLiveActivity
+        PRODUCT_MODULE_NAME: ProductivityTrackerLiveActivity
+        INFOPLIST_FILE: ProductivityTrackerLiveActivity/Info.plist
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Conduit
+        SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+        TARGETED_DEVICE_FAMILY: "1"
+  ProductivityTrackerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ProductivityTrackerTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.tests
+        PRODUCT_NAME: ProductivityTrackerTests
+        PRODUCT_MODULE_NAME: ProductivityTrackerTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ProductivityTracker.app/ProductivityTracker"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: ProductivityTracker
+  ProductivityTrackerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ProductivityTrackerUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.arahe.ProductivityTracker.uitests
+        PRODUCT_NAME: ProductivityTrackerUITests
+        PRODUCT_MODULE_NAME: ProductivityTrackerUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: ProductivityTracker
+    dependencies:
+      - target: ProductivityTracker
+schemes:
+  ProductivityTracker:
+    build:
+      targets:
+        ProductivityTracker: all
+        ProductivityTrackerLiveActivity: all
+        ProductivityTrackerTests: [test]
+        ProductivityTrackerUITests: [test]
+    test:
+      targets:
+        - ProductivityTrackerTests
+        - ProductivityTrackerUITests
+      gatherCoverageData: false
