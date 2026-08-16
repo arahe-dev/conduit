@@ -67,6 +67,15 @@ final class LiveActivityStateTests: XCTestCase {
         XCTAssertEqual(String(describing: SetStopwatchRunningIntent.self), "SetStopwatchRunningIntent")
     }
 
+    func testWantRunningTogglesWhenRequestedMatchesCurrent() {
+        XCTAssertFalse(StopwatchRunningDecision.wantRunning(requested: false, currentlyRunning: true))
+        XCTAssertTrue(StopwatchRunningDecision.wantRunning(requested: true, currentlyRunning: false))
+        XCTAssertTrue(StopwatchRunningDecision.wantRunning(requested: false, currentlyRunning: false))
+        XCTAssertFalse(StopwatchRunningDecision.wantRunning(requested: true, currentlyRunning: true))
+        XCTAssertFalse(StopwatchRunningDecision.wantRunning(requested: false, currentlyRunning: nil))
+        XCTAssertTrue(StopwatchRunningDecision.wantRunning(requested: true, currentlyRunning: nil))
+    }
+
     func testLiveActivityContentIncludesTintAndIconFields() throws {
         let time = ControllableTimeSource(now: Date(timeIntervalSince1970: 2000))
         let live = NullLiveActivityManager()

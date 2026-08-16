@@ -1,6 +1,5 @@
 import AppIntents
 
-/// WidgetKit pre-renders on/off for `Toggle`. `value` is the new running flag after the tap.
 struct SetStopwatchRunningIntent: SetValueIntent, LiveActivityIntent {
     static var title: LocalizedStringResource { "Stopwatch Running" }
     static var openAppWhenRun: Bool { false }
@@ -17,19 +16,16 @@ struct SetStopwatchRunningIntent: SetValueIntent, LiveActivityIntent {
 
     func perform() async throws -> some IntentResult {
         let now = Date()
-        if value {
-            await LiveActivityClock.resume(at: now)
-        } else {
-            await LiveActivityClock.pause(at: now)
-        }
+        let wantRunning = StopwatchRunningDecision.wantRunning(
+            requested: value,
+            currentlyRunning: LiveActivityClock.currentIsRunning
+        )
+        await LiveActivityClock.apply(running: wantRunning, at: now)
         #if APP_TARGET
-        let running = value
-        Task(priority: .userInitiated) { @MainActor in
-            if running {
-                await AppRuntime.shared.sessionController?.startFromLiveActivity(at: now)
-            } else {
-                await AppRuntime.shared.sessionController?.stopFromLiveActivity(at: now)
-            }
+        if wantRunning {
+            await AppRuntime.shared.sessionController?.startFromLiveActivity(at: now)
+        } else {
+            await AppRuntime.shared.sessionController?.stopFromLiveActivity(at: now)
         }
         #endif
         return .result()
@@ -42,7 +38,12 @@ struct StopFromLiveActivityIntent: LiveActivityIntent {
     static var authenticationPolicy: IntentAuthenticationPolicy { .alwaysAllowed }
 
     func perform() async throws -> some IntentResult {
-        try await SetStopwatchRunningIntent(value: false).perform()
+        let now = Date()
+        await LiveActivityClock.pause(at: now)
+        #if APP_TARGET
+        await AppRuntime.shared.sessionController?.stopFromLiveActivity(at: now)
+        #endif
+        return .result()
     }
 }
 
@@ -52,7 +53,12 @@ struct ResumeFromLiveActivityIntent: LiveActivityIntent {
     static var authenticationPolicy: IntentAuthenticationPolicy { .alwaysAllowed }
 
     func perform() async throws -> some IntentResult {
-        try await SetStopwatchRunningIntent(value: true).perform()
+        let now = Date()
+        await LiveActivityClock.resume(at: now)
+        #if APP_TARGET
+        await AppRuntime.shared.sessionController?.startFromLiveActivity(at: now)
+        #endif
+        return .result()
     }
 }
 
@@ -79,9 +85,7 @@ struct ResetFromLiveActivityIntent: LiveActivityIntent {
     func perform() async throws -> some IntentResult {
         await LiveActivityClock.dismiss()
         #if APP_TARGET
-        Task(priority: .userInitiated) { @MainActor in
-            await AppRuntime.shared.sessionController?.resetFromLiveActivity()
-        }
+        await AppRuntime.shared.sessionController?.resetFromLiveActivity()
         #endif
         return .result()
     }
